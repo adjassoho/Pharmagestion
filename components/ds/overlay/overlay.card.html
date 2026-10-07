@@ -1,0 +1,32 @@
+<!-- @dsCard group="Composants" viewport="700x500" name="Superpositions — Dialog, AlertDialog, Drawer" subtitle="Modale + dialogue de confirmation + panneau coulissant" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:0;background:var(--color-bg);font-family:var(--font-sans);}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { Dialog, AlertDialog, Drawer, Button } = window.OBASASECSDesignSystem_66e938;
+function Demo() {
+  const [drawerOpen, setDrawerOpen] = React.useState(true);
+  return (
+    <div style={{position:'relative', height:480, display:'flex', gap:16}}>
+      <div style={{flex:1, position:'relative'}}>
+        <Dialog open={true} title="Entrée de stock rapide" footer={<><Button variant="secondary">Annuler</Button><Button variant="primary">Enregistrer</Button></>}>
+          <div style={{fontSize:14, color:'var(--text-secondary)'}}>Fer à béton 8mm — quantité reçue</div>
+        </Dialog>
+      </div>
+      <div style={{width:1, background:'var(--border-default)'}} />
+      <div style={{flex:1, position:'relative'}}>
+        <AlertDialog open={true} title="Supprimer ce produit ?" description="Cette action est irréversible." confirmLabel="Supprimer" />
+        <Drawer open={drawerOpen} side="bottom" title="Panier (2)" onClose={()=>setDrawerOpen(false)} footer={<Button variant="primary" fullWidth>Valider la vente</Button>}>
+          <div style={{fontSize:14, color:'var(--text-secondary)'}}>Fer à béton 8mm ×2 — 9 000 FCFA</div>
+        </Drawer>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>

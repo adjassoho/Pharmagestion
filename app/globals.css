@@ -1,0 +1,588 @@
+@import "./ds.css";
+@import "tailwindcss";
+
+/* ============================================================
+   PharmaGestion Design System — Tokens CSS & Thème Comprimé
+   Inspiré de inspiration_design.html (Esthétique Néomorphique & Clinique)
+   ============================================================ */
+
+/* ---- Light Theme (défaut) ---- */
+:root {
+  /* Base brand médicale (alignée demopharma : blue-600 / indigo-500 / slate) */
+  --color-primary:      #2563eb;
+  --color-accent:       #6366f1;
+  --color-text:         #1e293b;
+  --color-bg:           #f4f6fa;
+  --color-surface:      #f4f6fa;
+
+  /* Surfaces dérivées et conteneurs */
+  --surface-variant:    #e0e7ff;
+  --surface-dim:        #cbd5e1;
+  --surface-bright:     #f8fafc;
+  --surface-container:  #e2e8f0;
+  --surface-container-low: #eef2f6;
+  --surface-container-high: #e2e8f0;
+  --surface-container-highest: #dbe4ee;
+  --surface-container-lowest: #ffffff;
+
+  /* Semantic status */
+  --color-danger:       #dc2626;
+  --color-warning:      #d97706;
+  --color-success:      #059669;
+  --color-muted:        #64748b;
+
+  /* Extended primary ramp — Bleu Médical (blue Tailwind, comme demopharma) */
+  --color-primary-50:   #eff6ff;
+  --color-primary-100:  #dbeafe;
+  --color-primary-300:  #93c5fd;
+  --color-primary-500:  #2563eb;
+  --color-primary-600:  #1d4ed8;
+  --color-primary-700:  #1e3a8a;
+
+  /* Extended accent ramp */
+  --color-accent-50:    #eef2ff;
+  --color-accent-100:   #e0e7ff;
+  --color-accent-500:   #6366f1;
+  --color-accent-600:   #4f46e5;
+
+  /* Extended danger ramp */
+  --color-danger-50:    #fee2e2;
+  --color-danger-500:   #dc2626;
+  --color-danger-600:   #b91c1c;
+
+  /* Extended warning ramp */
+  --color-warning-50:   #fef3c7;
+  --color-warning-500:  #d97706;
+  --color-warning-600:  #b45309;
+
+  /* Extended success ramp */
+  --color-success-50:   #d1fae5;
+  --color-success-500:  #10b981;
+  --color-success-600:  #047857;
+
+  /* Extended muted ramp */
+  --color-muted-50:     #f8fafc;
+  --color-muted-100:    #f1f5f9;
+  --color-muted-500:    #64748b;
+  --color-muted-600:    #475569;
+
+  /* Neutrals / grays */
+  --gray-25:  #FBFCFD;
+  --gray-50:  #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-300: #CBD5E1;
+  --gray-400: #94A3B8;
+  --gray-500: #64748B;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1F2937;
+  --gray-900: #0F172A;
+
+  /* Semantic surface aliases */
+  --surface-app:        var(--color-bg);
+  --surface-card:       var(--color-surface);
+  --surface-sunken:     var(--surface-container-low);
+  --surface-overlay:    rgba(11, 28, 48, 0.48);
+  --surface-inverse:    #0b1c30;
+
+  /* Text aliases */
+  --text-primary:       var(--color-text);
+  --text-secondary:     var(--color-muted);
+  --text-tertiary:      #94a3b8;
+  --text-on-primary:    #FFFFFF;
+  --text-on-accent:     #FFFFFF;
+  --text-on-danger:     #FFFFFF;
+  --text-on-success:    #FFFFFF;
+  --text-link:          var(--color-primary);
+  --text-link-hover:    var(--color-primary-600);
+
+  /* Brand Icon Tokens */
+  --pharma-icon-idle:   #94a3b8;
+  --pharma-icon-active: #2563eb;
+
+  /* Border aliases (slate, comme demopharma) */
+  --border-default:     #e2e8f0;
+  --border-strong:      #cbd5e1;
+  --border-focus:       var(--color-primary);
+
+  /* Status badge tokens (pills doux demopharma : bg-*-100 / fg-*-700) */
+  --status-instock-bg:      #d1fae5;
+  --status-instock-fg:      #047857;
+  --status-low-bg:          #fef3c7;
+  --status-low-fg:          #b45309;
+  --status-out-bg:          #fee2e2;
+  --status-out-fg:          #b91c1c;
+  --status-unset-bg:        #f1f5f9;
+  --status-unset-fg:        #64748b;
+
+  /* Page surface tokens (plaquette néomorphique, theme-aware) */
+  --pg-ink:                 #0b1c30;
+  --pg-muted:               #5c5f61;
+  --pg-card:                #ffffff;
+  --pg-chip-bg:             #eff4ff;
+  --pg-chip-soft:           #f8f9ff;
+  --pg-chip-border:         #b4c5ff;
+  --pg-hairline:            #e0e3e6;
+  --pg-table-head-border:   #cbdbf5;
+  --pg-glass:               rgba(244, 246, 250, 0.8);
+  --pg-topbar:              rgba(244, 246, 250, 0.9);
+
+  /* Typography */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --text-display-size: 32px;
+  --text-display-weight: 700;
+  --text-display-line: 1.25;
+  --text-display-tracking: -0.02em;
+
+  --text-h1-size: 24px;
+  --text-h1-weight: 600;
+  --text-h1-line: 1.33;
+  --text-h1-tracking: -0.01em;
+
+  --text-h2-size: 18px;
+  --text-h2-weight: 600;
+  --text-h2-line: 1.33;
+
+  --text-body-size: 14px;
+  --text-body-weight: 400;
+  --text-body-line: 1.43;
+
+  --text-small-size: 13px;
+  --text-small-weight: 400;
+  --text-small-line: 1.38;
+
+  --text-tiny-size: 11px;
+  --text-tiny-weight: 600;
+  --text-tiny-line: 1.45;
+  --text-tiny-tracking: 0.05em;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Radius — Inspiré forme gélule/comprimé */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* Shadows Standard & Néomorphiques (valeurs demopharma) */
+  --shadow-xs: 0 1px 2px rgba(30, 41, 59, 0.05);
+  --shadow-sm: 0 1px 3px rgba(30, 41, 59, 0.08), 0 1px 2px rgba(30, 41, 59, 0.04);
+  --shadow-md: -6px -6px 14px rgba(255, 255, 255, 0.9), 6px 6px 14px rgba(187, 195, 206, 0.4);
+  --shadow-lg: -8px -8px 18px rgba(255, 255, 255, 0.95), 8px 8px 18px rgba(187, 195, 206, 0.5);
+  --shadow-modal: -10px -10px 24px rgba(255, 255, 255, 0.9), 12px 12px 32px rgba(148, 163, 184, 0.45), 0 24px 48px rgba(15, 23, 42, 0.18);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+
+  /* Layout */
+  --touch-target-min: 44px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 80px;
+  /* Neumorphic Clinical Tactile Shadows (demopharmagestion) */
+  --bg-main: #f4f6fa;
+  --shadow-raised: -6px -6px 14px rgba(255, 255, 255, 0.9), 6px 6px 14px rgba(187, 195, 206, 0.4);
+  --shadow-raised-hover: -8px -8px 18px rgba(255, 255, 255, 0.95), 8px 8px 18px rgba(187, 195, 206, 0.5);
+  --shadow-inset: inset 4px 4px 8px rgba(187, 195, 206, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+  --shadow-blister-inset: inset 6px 6px 12px rgba(187, 195, 206, 0.4), inset -6px -6px 12px rgba(255, 255, 255, 0.9);
+  --shadow-blister-pill: -4px -4px 10px rgba(255, 255, 255, 0.9), 4px 4px 10px rgba(187, 195, 206, 0.4);
+}
+
+/* ---- Dark Theme ---- */
+:root[data-theme="dark"] {
+  --color-primary:      #326cf4;
+  --color-accent:       #60a5fa;
+  --color-text:         #eaf1ff;
+  --color-bg:           #0b1c30;
+  --color-surface:      #13233a;
+
+  --surface-variant:    #1e324d;
+  --surface-dim:        #091626;
+  --surface-bright:     #172a45;
+  --surface-container:  #182e4b;
+  --surface-container-low: #0f2238;
+  --surface-container-high: #1c3556;
+  --surface-container-highest: #223f66;
+  --surface-container-lowest: #07111e;
+
+  --color-danger:       #f87171;
+  --color-warning:      #fbbf24;
+  --color-success:      #4ade80;
+  --color-muted:        #94a3b8;
+
+  --gray-25:  #07111e;
+  --gray-50:  #0b1c30;
+  --gray-100: #0f2238;
+  --gray-200: #182e4b;
+  --gray-300: #223f66;
+  --gray-400: #64748B;
+  --gray-500: #94A3B8;
+  --gray-600: #CBD5E1;
+  --gray-700: #E2E8F0;
+  --gray-800: #F1F5F9;
+  --gray-900: #F8FAFC;
+
+  --surface-app:        var(--color-bg);
+  --surface-card:       var(--color-surface);
+  --surface-sunken:     var(--surface-container-low);
+  --surface-overlay:    rgba(0, 0, 0, 0.6);
+  --surface-inverse:    #07111e;
+
+  --text-primary:       #eaf1ff;
+  --text-secondary:     #94A3B8;
+  --text-tertiary:      #64748B;
+  --text-on-primary:    #FFFFFF;
+  --text-on-accent:     #0b1c30;
+  --text-on-danger:     #0b1c30;
+  --text-on-success:    #0b1c30;
+  --text-link:          #60a5fa;
+  --text-link-hover:    #93c5fd;
+
+  --pharma-icon-idle:   #94a3b8;
+  --pharma-icon-active: #60a5fa;
+
+  --border-default:     #1e324d;
+  --border-strong:      #334155;
+  --border-focus:       #60a5fa;
+
+  --status-instock-bg:      rgba(34, 197, 94, 0.16);
+  --status-instock-fg:      #4ade80;
+  --status-low-bg:          rgba(251, 191, 36, 0.18);
+  --status-low-fg:          #fde047;
+  --status-out-bg:          rgba(239, 68, 68, 0.20);
+  --status-out-fg:          #fca5a5;
+  --status-unset-bg:        rgba(148, 163, 184, 0.14);
+  --status-unset-fg:        #cbd5e1;
+
+  /* Page surface tokens (plaquette néomorphique, theme-aware) */
+  --pg-ink:                 #eaf1ff;
+  --pg-muted:               #a3b3c9;
+  --pg-card:                #13233a;
+  --pg-chip-bg:             #0f2238;
+  --pg-chip-soft:           #172a45;
+  --pg-chip-border:         #2b4a7a;
+  --pg-hairline:            #223f66;
+  --pg-table-head-border:   #2b4a7a;
+  --pg-glass:               rgba(19, 35, 58, 0.8);
+  --pg-topbar:              rgba(11, 28, 48, 0.9);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: -4px -4px 10px rgba(255, 255, 255, 0.03), 4px 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: -6px -6px 14px rgba(255, 255, 255, 0.04), 6px 6px 16px rgba(0, 0, 0, 0.7);
+  --shadow-modal: 0 24px 48px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  --bg-main: #0b1c30;
+  --shadow-raised: -4px -4px 10px rgba(255, 255, 255, 0.03), 4px 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-raised-hover: -6px -6px 14px rgba(255, 255, 255, 0.05), 6px 6px 16px rgba(0, 0, 0, 0.7);
+  --shadow-inset: inset 3px 3px 6px rgba(0, 0, 0, 0.6), inset -3px -3px 6px rgba(255, 255, 255, 0.04);
+  --shadow-blister-inset: inset 4px 4px 10px rgba(0, 0, 0, 0.6), inset -4px -4px 10px rgba(255, 255, 255, 0.04);
+  --shadow-blister-pill: -3px -3px 8px rgba(255, 255, 255, 0.03), 3px 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   Custom Typography Utilities (demopharmagestion)
+   ============================================================ */
+.font-display-lg {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.font-headline-md {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.font-headline-sm {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.font-title-sm {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.font-body-base {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.font-body-sm {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.font-label-bold {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.font-data-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+/* ============================================================
+   Classes Utilitaires Néomorphiques & Effet Comprimé
+   ============================================================ */
+
+.neo-raised,
+.neumorphic-raised {
+  background-color: var(--surface-card, #f4f6fa);
+  box-shadow: var(--shadow-raised);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .neo-raised,
+[data-theme="dark"] .neumorphic-raised {
+  background-color: var(--surface-card, #13233a);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.neo-raised:hover,
+.neumorphic-raised:hover {
+  box-shadow: var(--shadow-raised-hover);
+}
+
+.neo-inset,
+.neumorphic-inset {
+  background-color: var(--surface-card, #f4f6fa);
+  box-shadow: var(--shadow-inset);
+  border-radius: 1rem;
+}
+
+[data-theme="dark"] .neo-inset,
+[data-theme="dark"] .neumorphic-inset {
+  background-color: var(--surface-container-low, #0f2238);
+}
+
+.neo-btn-raised {
+  background-color: var(--surface-card, #f4f6fa);
+  box-shadow: -4px -4px 8px rgba(255, 255, 255, 0.9), 4px 4px 8px rgba(187, 195, 206, 0.4);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+[data-theme="dark"] .neo-btn-raised {
+  background-color: var(--surface-card, #13233a);
+  box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.03), 3px 3px 8px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.neo-btn-raised:hover {
+  box-shadow: -5px -5px 10px rgba(255, 255, 255, 0.95), 5px 5px 10px rgba(187, 195, 206, 0.45);
+}
+
+[data-theme="dark"] .neo-btn-raised:hover {
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.05), 4px 4px 10px rgba(0, 0, 0, 0.7);
+}
+
+.neo-btn-raised:active,
+.neumorphic-button-active:active {
+  box-shadow: var(--shadow-inset);
+}
+
+.neo-sidebar {
+  background-color: var(--surface-card, #f4f6fa);
+  box-shadow: 8px 0 20px rgba(187, 195, 206, 0.25);
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="dark"] .neo-sidebar {
+  background-color: var(--surface-card, #13233a);
+  box-shadow: 8px 0 20px rgba(0, 0, 0, 0.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.blister-pack-bg {
+  background-color: #eef2f6;
+  box-shadow: var(--shadow-blister-inset);
+  border-radius: 1.5rem;
+}
+
+[data-theme="dark"] .blister-pack-bg {
+  background-color: #0d1e34;
+  box-shadow: var(--shadow-blister-inset);
+}
+
+.blister-pill {
+  background-color: var(--surface-card, #f4f6fa);
+  box-shadow: var(--shadow-blister-pill);
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .blister-pill {
+  background-color: var(--surface-card, #13233a);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.blister-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: -5px -5px 12px rgba(255, 255, 255, 0.9), 5px 5px 12px rgba(187, 195, 206, 0.45);
+}
+
+[data-theme="dark"] .blister-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.05), 4px 4px 10px rgba(0, 0, 0, 0.7);
+}
+
+.blister-pill:active {
+  box-shadow: var(--shadow-inset);
+  transform: translateY(0);
+}
+
+.sidebar-active {
+  background-color: #e0e7ff;
+  color: #2563eb;
+  box-shadow: inset 2px 2px 5px rgba(187, 195, 206, 0.3), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .sidebar-active {
+  background-color: #1e324d;
+  color: #60a5fa;
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+}
+
+.interactive-element {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ── Scrollbars fines (demopharma : 6px, track transparent) ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::selection {
+  background: #bfdbfe;
+}
+
+/* ============================================================
+   Tailwind CSS 4 — Theme Extension
+   ============================================================ */
+@theme {
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-danger: var(--color-danger);
+  --color-warning: var(--color-warning);
+  --color-success: var(--color-success);
+  --color-muted: var(--color-muted);
+  --color-surface-app: var(--surface-app);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-modal: var(--shadow-modal);
+}
+
+/* ============================================================
+   Base layer
+   ============================================================ */
+@layer base {
+  body {
+    @apply antialiased;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-line);
+    color: var(--text-primary);
+    background: var(--surface-app);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--surface-card, #f8f9ff) inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  [data-theme="dark"] input:-webkit-autofill,
+  [data-theme="dark"] input:-webkit-autofill:hover,
+  [data-theme="dark"] input:-webkit-autofill:focus,
+  [data-theme="dark"] input:-webkit-autofill:active {
+    -webkit-text-fill-color: #eaf1ff !important;
+    -webkit-box-shadow: 0 0 0px 1000px #13233a inset !important;
+  }
+}

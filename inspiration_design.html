@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="light" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PharmaPlus - Fiche Article détaillée</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "background": "#f8f9ff",
+                      "surface-variant": "#d3e4fe",
+                      "surface-bright": "#f8f9ff",
+                      "surface-dim": "#cbdbf5",
+                      "surface": "#f8f9ff",
+                      "on-tertiary-fixed": "#00174b",
+                      "on-surface": "#0b1c30",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#ffffff",
+                      "secondary": "#5c5f61",
+                      "tertiary-fixed": "#dbe1ff",
+                      "primary-fixed-dim": "#c6c6c7",
+                      "surface-container-highest": "#d3e4fe",
+                      "secondary-fixed-dim": "#c4c7ca",
+                      "tertiary-container": "#ffffff",
+                      "secondary-container": "#e0e3e6",
+                      "primary": "#5d5f5f",
+                      "on-secondary-fixed-variant": "#44474a",
+                      "secondary-fixed": "#e0e3e6",
+                      "on-primary-fixed-variant": "#454747",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a",
+                      "surface-container": "#e5eeff",
+                      "outline-variant": "#c4c7c8",
+                      "on-primary-container": "#747676",
+                      "inverse-on-surface": "#eaf1ff",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#0b1c30",
+                      "surface-container-low": "#eff4ff",
+                      "on-secondary-container": "#626567",
+                      "inverse-surface": "#213145",
+                      "tertiary-fixed-dim": "#b4c5ff",
+                      "on-tertiary-fixed-variant": "#003ea8",
+                      "primary-fixed": "#e2e2e2",
+                      "on-secondary-fixed": "#191c1e",
+                      "on-tertiary-container": "#326cf4",
+                      "tertiary": "#0053db",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface-container-high": "#dce9ff",
+                      "on-primary-fixed": "#1a1c1c",
+                      "outline": "#747878",
+                      "surface-tint": "#5d5f5f",
+                      "inverse-primary": "#c6c6c7",
+                      "on-error-container": "#93000a",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface-variant": "#444748"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "gutter": "16px",
+                      "container-margin": "24px",
+                      "md": "16px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "title-sm": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "label-bold": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "data-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-base": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "title-sm": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-bold": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "data-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-base": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F0F2F5;
+        }
+        
+        .neumorphic-raised {
+            background: #f8f9ff;
+            box-shadow: -8px -8px 16px #FFFFFF, 8px 8px 16px #D1D9E6;
+            border-radius: 12px;
+        }
+
+        .neumorphic-inset {
+            background: #f8f9ff;
+            box-shadow: inset 4px 4px 8px #D1D9E6, inset -4px -4px 8px #FFFFFF;
+            border-radius: 12px;
+        }
+        
+        .neumorphic-button-active:active {
+            box-shadow: inset 4px 4px 8px #D1D9E6, inset -4px -4px 8px #FFFFFF;
+        }
+        
+        /* Subtle transition for interactive elements */
+        .interactive-element {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* Hide scrollbar for cleaner look in sidebars/tables */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F0F2F5; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c6c6c7; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #747878; 
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-base h-screen overflow-hidden flex flex-col antialiased">
+<!-- TopNavBar -->
+<header class="h-20 w-full sticky top-0 bg-transparent flex items-center justify-between pl-[284px] pr-lg py-md z-20">
+<div class="flex items-center gap-4 w-1/3">
+<div class="neumorphic-inset flex items-center w-full px-4 py-2 text-secondary h-[40px] focus-within:ring-2 focus-within:ring-tertiary outline-none rounded-full">
+<span class="material-symbols-outlined mr-2" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-body-base outline-none" placeholder="Rechercher un produit, client..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full neumorphic-raised flex items-center justify-center text-secondary hover:scale-105 transition-transform neumorphic-button-active">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full neumorphic-raised flex items-center justify-center text-secondary hover:scale-105 transition-transform neumorphic-button-active">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">print</span>
+</button>
+<button class="w-10 h-10 rounded-full neumorphic-raised flex items-center justify-center text-secondary hover:scale-105 transition-transform neumorphic-button-active">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help</span>
+</button>
+<div class="w-10 h-10 rounded-full neumorphic-raised overflow-hidden cursor-pointer hover:scale-105 transition-transform ml-2">
+<img alt="Silvère ADJASSOHO - Administrateur" class="w-full h-full object-cover" data-alt="A highly detailed close-up portrait of a professional African pharmacist administrator in a bright, modern, well-lit medical setting. The lighting is soft and clinical, emphasizing a clean, sterile environment. Professional attire, clear white lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcJ6ycg09RoxHcvCgvhrqgCnuac4k6ZuGD1sgsrg5e7GR2CGEIWtR1GUIN0phpFA1UNxLI0dVpbzgXocyREWhMgMXRoDMtHtSTDL6t-rr8qwEJbnxbGOMGsXwNBex8NnhCna4KM5XL8aYGXDOm29ZQRxdh4GZo6_Jn4uKMlW4muydoOTYNCkqAklP0wSeNG69MjAhhbx2sA_UIQzRHycx5I8oAOgtw1pBWIRsh8QY408JnFQhdoc4_TjoTRPT_8XC_UCum-wywSi0"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 h-[calc(100vh-80px)] overflow-hidden relative">
+<!-- SideNavBar -->
+<aside class="w-[260px] h-screen fixed left-0 top-0 bg-background shadow-[-8px_-8px_16px_#FFFFFF,8px_8px_16px_#D1D9E6] z-30 flex flex-col py-lg px-md gap-md">
+<!-- Header -->
+<div class="flex items-center gap-3 px-2 mb-4">
+<div class="w-12 h-12 rounded-full neumorphic-raised flex items-center justify-center bg-white text-tertiary">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">PharmaPlus</h1>
+<p class="font-label-bold text-label-bold text-secondary">Gestion de Pharmacie</p>
+</div>
+</div>
+<!-- Main Nav -->
+<nav class="flex-1 flex flex-col gap-2 overflow-y-auto mt-4">
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span class="font-label-bold text-label-bold">Tableau de bord</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm bg-surface-container-highest text-tertiary rounded-xl shadow-[inset_4px_4px_8px_#D1D9E6,inset_-4px_-4px_8px_#FFFFFF] scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-bold text-label-bold">Produits</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_cart</span>
+<span class="font-label-bold text-label-bold">Ventes</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">description</span>
+<span class="font-label-bold text-label-bold">Ordonnances</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">group</span>
+<span class="font-label-bold text-label-bold">Clients</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">local_shipping</span>
+<span class="font-label-bold text-label-bold">Fournisseurs</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">inventory</span>
+<span class="font-label-bold text-label-bold">Stock</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-label-bold text-label-bold">Rapports</span>
+</a>
+</nav>
+<!-- Footer Nav -->
+<div class="mt-auto pt-4">
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:text-on-surface transition-all hover:bg-surface-container-low duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-label-bold text-label-bold">Paramètres</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto ml-[260px] pl-lg pr-lg pb-xl pt-4">
+<!-- Breadcrumb & Actions -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<div class="flex items-center gap-2 text-secondary font-label-bold text-label-bold mb-2">
+<a class="hover:text-tertiary" href="#">Produits</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface">Doliprane 1000mg</span>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface">Fiche Article</h2>
+</div>
+<div class="flex gap-4">
+<button class="neumorphic-raised px-6 py-3 font-label-bold text-label-bold text-on-surface flex items-center gap-2 hover:bg-surface-variant neumorphic-button-active transition-all">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+                        Modifier
+                    </button>
+<button class="neumorphic-raised px-6 py-3 font-label-bold text-label-bold text-on-surface flex items-center gap-2 hover:bg-surface-variant neumorphic-button-active transition-all">
+<span class="material-symbols-outlined text-[18px]">inventory</span>
+                        Inventaire
+                    </button>
+<button class="neumorphic-raised px-6 py-3 font-label-bold text-label-bold text-tertiary flex items-center gap-2 bg-white neumorphic-button-active transition-all">
+<span class="material-symbols-outlined text-[18px]">history</span>
+                        Historique complet
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6">
+<!-- Col Left: Info & Pricing -->
+<div class="col-span-12 xl:col-span-4 flex flex-col gap-6">
+<!-- General Info Card -->
+<div class="neumorphic-raised p-lg flex flex-col gap-4">
+<div class="flex items-start justify-between">
+<div class="w-20 h-20 neumorphic-inset rounded-lg flex items-center justify-center bg-white p-2">
+<img alt="Doliprane" class="w-full h-full object-contain" data-alt="A pristine, sterile white blister pack of paracetamol 1000mg pills resting on a clean, bright white medical surface. The lighting highlights the embossed texture of the pills. Clinical, neomorphic, professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCo02-GvbJz6GTEKkOMTVK8zeAlcNYzdEee-bCKQdTF1QL96Ffu98fhKDCzbnrtMz7QODiWGqiEySVI_8xDM6PbQ833V_efJzKhgxQU65hEmz1tcl94nmgRi-SxA7SB-DUO2zVQle-O935wCV0RIM8PVsSn2rnEqvuYT1eZmRjMxP9Xym7YGDwrHZTpImTGNcE-6Y_ur4P3X83R6K8CnJFUXWMkMxMj0aapV4GjzpEHep0__M4UwwfnGvQ4TuV5zWBt8Au-fgvAFY"/>
+</div>
+<span class="neumorphic-inset px-3 py-1 rounded-full text-[10px] font-bold text-tertiary uppercase tracking-wider bg-white">Actif</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md font-bold mb-1">Doliprane 1000mg</h3>
+<p class="font-body-base text-body-base text-secondary">Paracétamol - Boîte de 8 comprimés</p>
+</div>
+<div class="w-full h-[1px] bg-secondary-container my-2 opacity-50"></div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] font-label-bold text-secondary uppercase mb-1">Code CIP</p>
+<p class="font-data-mono text-data-mono text-on-surface bg-surface-container-low px-2 py-1 rounded neumorphic-inset inline-block">3400934149624</p>
+</div>
+<div>
+<p class="text-[10px] font-label-bold text-secondary uppercase mb-1">Code Barre</p>
+<p class="font-data-mono text-data-mono text-on-surface bg-surface-container-low px-2 py-1 rounded neumorphic-inset inline-block">3400934149624</p>
+</div>
+<div>
+<p class="text-[10px] font-label-bold text-secondary uppercase mb-1">Famille</p>
+<p class="font-body-sm text-body-sm font-medium">Antalgiques</p>
+</div>
+<div>
+<p class="text-[10px] font-label-bold text-secondary uppercase mb-1">TVA</p>
+<p class="font-body-sm text-body-sm font-medium">2.1%</p>
+</div>
+</div>
+</div>
+<!-- Pricing Card -->
+<div class="neumorphic-raised p-lg">
+<h4 class="font-title-sm text-title-sm mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">payments</span>
+                            Tarification
+                        </h4>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg neumorphic-inset">
+<span class="font-body-sm text-secondary">Prix d'Achat HT</span>
+<span class="font-data-mono text-data-mono font-bold">1,45 €</span>
+</div>
+<div class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg neumorphic-inset border border-tertiary-fixed-dim">
+<span class="font-body-sm text-on-surface font-semibold">Prix de Vente TTC</span>
+<span class="font-data-mono text-[16px] font-bold text-tertiary">2,10 €</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="font-body-sm text-secondary">Marge brute</span>
+<span class="font-data-mono text-data-mono text-green-600 font-bold">30.9%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Col Right: Stock & History -->
+<div class="col-span-12 xl:col-span-8 flex flex-col gap-6">
+<!-- Stock Bento -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Magasin -->
+<div class="neumorphic-raised p-lg flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-tertiary/5 rounded-full blur-xl"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-title-sm text-title-sm text-on-surface mb-1">Stock Magasin</h4>
+<p class="font-body-sm text-secondary">Rayon A2, Étagère 3</p>
+</div>
+<div class="w-10 h-10 neumorphic-inset rounded-full flex items-center justify-center text-tertiary bg-white">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+</div>
+<div class="flex items-end gap-2 relative z-10">
+<span class="font-display-lg text-4xl font-bold text-on-surface tracking-tighter">142</span>
+<span class="font-label-bold text-secondary mb-1">unités</span>
+</div>
+</div>
+<!-- Réserve -->
+<div class="neumorphic-raised p-lg flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-title-sm text-title-sm text-on-surface mb-1">Stock Réserve</h4>
+<p class="font-body-sm text-secondary">Zone Froide, Bac 14</p>
+</div>
+<div class="w-10 h-10 neumorphic-inset rounded-full flex items-center justify-center text-secondary bg-white">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+</div>
+<div class="flex items-end gap-2">
+<span class="font-display-lg text-4xl font-bold text-secondary tracking-tighter">500</span>
+<span class="font-label-bold text-secondary mb-1">unités</span>
+</div>
+<!-- Alert badge simulation -->
+<div class="mt-4 inline-flex items-center gap-1 text-[11px] font-bold text-tertiary bg-tertiary/10 px-2 py-1 rounded-md w-fit">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                                Seuil d'alerte: 100
+                            </div>
+</div>
+</div>
+<!-- History Table -->
+<div class="neumorphic-raised p-lg flex-1 flex flex-col h-full min-h-[400px]">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-title-sm text-title-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">swap_vert</span>
+                                Mouvements de stock
+                            </h4>
+<div class="flex gap-2">
+<button class="px-3 py-1 text-[12px] font-medium neumorphic-inset rounded-md bg-white text-secondary hover:text-on-surface transition-colors">7 Jours</button>
+<button class="px-3 py-1 text-[12px] font-medium neumorphic-inset rounded-md bg-surface-variant text-tertiary font-bold">30 Jours</button>
+</div>
+</div>
+<div class="neumorphic-inset rounded-lg overflow-hidden flex-1 bg-white">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-surface-dim">
+<tr>
+<th class="py-3 px-4 font-label-bold text-label-bold text-secondary uppercase">Date</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-secondary uppercase">Type</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-secondary uppercase">Quantité</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-secondary uppercase">Motif / Réf</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-secondary uppercase text-right">Solde</th>
+</tr>
+</thead>
+<tbody class="font-body-sm">
+<!-- Row 1 -->
+<tr class="border-b border-surface-dim hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface">24 Oct, 14:30</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 text-error bg-error-container/30 px-2 py-0.5 rounded text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> Vente
+                                            </span>
+</td>
+<td class="py-3 px-4 font-data-mono text-error font-bold">-2</td>
+<td class="py-3 px-4 text-secondary">Ticket #49281</td>
+<td class="py-3 px-4 text-right font-data-mono font-medium">642</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-surface-dim hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface">24 Oct, 09:15</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 text-error bg-error-container/30 px-2 py-0.5 rounded text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> Vente
+                                            </span>
+</td>
+<td class="py-3 px-4 font-data-mono text-error font-bold">-1</td>
+<td class="py-3 px-4 text-secondary">Ticket #49204</td>
+<td class="py-3 px-4 text-right font-data-mono font-medium">644</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-surface-dim hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface">23 Oct, 16:45</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-0.5 rounded text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> Réception
+                                            </span>
+</td>
+<td class="py-3 px-4 font-data-mono text-green-700 font-bold">+500</td>
+<td class="py-3 px-4 text-secondary">BL #CERP-992</td>
+<td class="py-3 px-4 text-right font-data-mono font-medium">645</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-surface-dim hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface">20 Oct, 11:20</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 text-orange-600 bg-orange-100 px-2 py-0.5 rounded text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">sync_alt</span> Correction
+                                            </span>
+</td>
+<td class="py-3 px-4 font-data-mono text-error font-bold">-1</td>
+<td class="py-3 px-4 text-secondary">Casse comptoir</td>
+<td class="py-3 px-4 text-right font-data-mono font-medium">145</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface">19 Oct, 18:00</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 text-error bg-error-container/30 px-2 py-0.5 rounded text-[11px] font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span> Vente
+                                            </span>
+</td>
+<td class="py-3 px-4 font-data-mono text-error font-bold">-3</td>
+<td class="py-3 px-4 text-secondary">Ticket #48902</td>
+<td class="py-3 px-4 text-right font-data-mono font-medium">146</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

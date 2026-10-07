@@ -1,0 +1,532 @@
+/* ══════════════════════════════════════════════════════════════
+   DEMO THEME — conformité visuelle demopharma (néomorphique clinique)
+   Chargé APRÈS ds.css et globals.css : mêmes sélecteurs, cascade gagnante.
+   Toutes les surfaces plates héritent du langage demopharma :
+   cartes « neo-raised », puits « neo-inset », tables blister, pilules.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  --demo-raised:
+    -6px -6px 14px rgba(255, 255, 255, 0.9),
+    6px 6px 14px rgba(187, 195, 206, 0.4);
+  --demo-raised-hover:
+    -8px -8px 18px rgba(255, 255, 255, 0.95),
+    8px 8px 18px rgba(187, 195, 206, 0.5);
+  --demo-inset:
+    inset 4px 4px 8px rgba(187, 195, 206, 0.4),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+  --demo-border: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] {
+  --demo-raised: -4px -4px 10px rgba(255, 255, 255, 0.03), 4px 4px 12px rgba(0, 0, 0, 0.6);
+  --demo-raised-hover: -6px -6px 14px rgba(255, 255, 255, 0.05), 6px 6px 16px rgba(0, 0, 0, 0.7);
+  --demo-inset: inset 3px 3px 6px rgba(0, 0, 0, 0.6), inset -3px -3px 6px rgba(255, 255, 255, 0.04);
+  --demo-border: rgba(255, 255, 255, 0.06);
+}
+
+/* ── 1. Surfaces surélevées (cartes, panneaux, wrappers de listes) ── */
+.ds-clients-list-card,
+.ds-users-list-card,
+.ds-suppliers-list-card,
+.ds-purchase-table-card,
+.ds-sales-history-table-card,
+.ds-reports-panel,
+.ds-settings-card,
+.ds-notifs-feed-card,
+.ds-stock-table-wrap,
+.ds-sales-invoice-preview-card,
+.ds-pay-recap,
+.ds-pay-panel,
+.ds-invoice-table,
+.ds-filter-sidebar,
+.ds-pos-filter-sidebar {
+  background: #f4f6fa;
+  border: 1px solid var(--demo-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--demo-raised);
+}
+
+[data-theme="dark"] .ds-clients-list-card,
+[data-theme="dark"] .ds-users-list-card,
+[data-theme="dark"] .ds-suppliers-list-card,
+[data-theme="dark"] .ds-purchase-table-card,
+[data-theme="dark"] .ds-sales-history-table-card,
+[data-theme="dark"] .ds-reports-panel,
+[data-theme="dark"] .ds-settings-card,
+[data-theme="dark"] .ds-notifs-feed-card,
+[data-theme="dark"] .ds-stock-table-wrap,
+[data-theme="dark"] .ds-sales-invoice-preview-card,
+[data-theme="dark"] .ds-pay-recap,
+[data-theme="dark"] .ds-pay-panel,
+[data-theme="dark"] .ds-invoice-table,
+[data-theme="dark"] .ds-filter-sidebar,
+[data-theme="dark"] .ds-pos-filter-sidebar {
+  background: var(--surface-card, #13233a);
+}
+
+/* ── 2. Conteneurs de table en puits (neo-inset, comme demopharma) ── */
+.ds-clients-table-wrapper,
+.ds-users-table-wrapper,
+.ds-suppliers-table-wrapper,
+.ds-purchase-table-wrapper,
+.ds-sales-history-table-wrapper,
+.ds-stock-table-wrap > div,
+.ds-table-responsive {
+  background: #eef2f6;
+  border-radius: 1rem;
+  box-shadow: var(--demo-inset);
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .ds-clients-table-wrapper,
+[data-theme="dark"] .ds-users-table-wrapper,
+[data-theme="dark"] .ds-suppliers-table-wrapper,
+[data-theme="dark"] .ds-purchase-table-wrapper,
+[data-theme="dark"] .ds-sales-history-table-wrapper,
+[data-theme="dark"] .ds-stock-table-wrap > div,
+[data-theme="dark"] .ds-table-responsive {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Tables internes : transparentes, laissons le puits porter l'effet. */
+.ds-clients-table,
+.ds-users-table,
+.ds-suppliers-table,
+.ds-purchase-table,
+.ds-sales-history-table,
+.ds-stock-table.ds-table,
+.ds-table {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-collapse: collapse !important;
+  font-size: 12px;
+}
+
+/* En-têtes de table : slate-500 gras sur fond transparent (demopharma). */
+.ds-clients-table th,
+.ds-users-table th,
+.ds-suppliers-table th,
+.ds-purchase-table th,
+.ds-sales-history-table th,
+.ds-table th,
+.ds-invoice-table-header {
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .ds-clients-table th,
+[data-theme="dark"] .ds-users-table th,
+[data-theme="dark"] .ds-suppliers-table th,
+[data-theme="dark"] .ds-purchase-table th,
+[data-theme="dark"] .ds-sales-history-table th,
+[data-theme="dark"] .ds-table th,
+[data-theme="dark"] .ds-invoice-table-header {
+  color: #94a3b8 !important;
+  border-bottom-color: #1e324d !important;
+}
+
+/* Cellules : bordures fines slate, texte compact. */
+.ds-clients-table td,
+.ds-users-table td,
+.ds-suppliers-table td,
+.ds-purchase-table td,
+.ds-sales-history-table td,
+.ds-table td {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6) !important;
+  font-size: 12px;
+}
+
+[data-theme="dark"] .ds-clients-table td,
+[data-theme="dark"] .ds-users-table td,
+[data-theme="dark"] .ds-suppliers-table td,
+[data-theme="dark"] .ds-purchase-table td,
+[data-theme="dark"] .ds-sales-history-table td,
+[data-theme="dark"] .ds-table td {
+  border-bottom-color: rgba(30, 50, 77, 0.8) !important;
+}
+
+/* Lignes : hover doux demopharma. */
+.ds-clients-row:hover,
+.ds-users-row:hover,
+.ds-suppliers-row:hover,
+.ds-purchase-row:hover,
+.ds-sales-history-row:hover,
+.ds-clients-table tbody tr:hover,
+.ds-users-table tbody tr:hover,
+.ds-suppliers-table tbody tr:hover,
+.ds-purchase-table tbody tr:hover,
+.ds-sales-history-table tbody tr:hover,
+.ds-table tbody tr:hover {
+  background: rgba(241, 245, 249, 0.55) !important;
+}
+
+[data-theme="dark"] .ds-clients-row:hover,
+[data-theme="dark"] .ds-users-row:hover,
+[data-theme="dark"] .ds-suppliers-row:hover,
+[data-theme="dark"] .ds-purchase-row:hover,
+[data-theme="dark"] .ds-sales-history-row:hover,
+[data-theme="dark"] .ds-clients-table tbody tr:hover,
+[data-theme="dark"] .ds-users-table tbody tr:hover,
+[data-theme="dark"] .ds-suppliers-table tbody tr:hover,
+[data-theme="dark"] .ds-purchase-table tbody tr:hover,
+[data-theme="dark"] .ds-sales-history-table tbody tr:hover,
+[data-theme="dark"] .ds-table tbody tr:hover {
+  background: rgba(30, 50, 77, 0.45) !important;
+}
+
+/* ── 3. Icônes de titre : dégradé bleu → indigo (brand demopharma) ── */
+.ds-clients-title-icon,
+.ds-users-title-icon,
+.ds-suppliers-title-icon,
+.ds-purchase-title-icon,
+.ds-sales-history-title-icon,
+.ds-reports-title-icon,
+.ds-notifs-title-icon,
+.ds-settings-title-icon,
+.ds-stock-title,
+.ds-profile-title-icon {
+  background: linear-gradient(to top right, #2563eb, #6366f1) !important;
+  color: #ffffff !important;
+  border-radius: 0.9rem;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+}
+
+/* ── 4. Filtres latéraux : items pilules, compteurs doux ── */
+.ds-filter-item {
+  border-radius: 0.75rem;
+}
+.ds-filter-item:hover {
+  background: rgba(226, 232, 240, 0.5);
+}
+.ds-filter-item.active {
+  background: #e0e7ff;
+  box-shadow: inset 2px 2px 5px rgba(187, 195, 206, 0.3), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+}
+.ds-filter-item.active .ds-filter-item-label {
+  color: #2563eb;
+  font-weight: 700;
+}
+.ds-filter-item-count {
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 9999px;
+}
+.ds-filter-reset-btn:hover {
+  background: rgba(226, 232, 240, 0.6);
+  border-radius: 9999px;
+}
+
+/* ── 5. Champs de recherche intégrés aux pages → puits néo ── */
+.ds-clients-search-input,
+.ds-users-search-input,
+.ds-suppliers-search-input,
+.ds-purchase-search-input,
+.ds-sales-history-search-input {
+  background: #f4f6fa;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  border-radius: 1rem !important;
+  box-shadow: var(--demo-inset);
+}
+.ds-clients-search-input:focus,
+.ds-users-search-input:focus,
+.ds-suppliers-search-input:focus,
+.ds-purchase-search-input:focus,
+.ds-sales-history-search-input:focus {
+  box-shadow: var(--demo-inset), 0 0 0 2px rgba(37, 99, 235, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme="dark"] .ds-clients-search-input,
+[data-theme="dark"] .ds-users-search-input,
+[data-theme="dark"] .ds-suppliers-search-input,
+[data-theme="dark"] .ds-purchase-search-input,
+[data-theme="dark"] .ds-sales-history-search-input {
+  background: var(--surface-card, #13233a);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── 6. Boutons bruts des pages (sans style inline) → pilules néo ──
+   Les <Button> DS portent leurs styles inline : non affectés par ces règles. */
+.ds-clients-header-actions button:not([style]),
+.ds-users-header-actions button:not([style]),
+.ds-suppliers-header-actions button:not([style]),
+.ds-purchase-header-actions button:not([style]),
+.ds-sales-history-header-actions button:not([style]),
+.ds-reports-header-actions button:not([style]),
+.ds-notifs-header-actions button:not([style]),
+.ds-stock-actions button:not([style]),
+.ds-pform-actions button:not([style]),
+.ds-pagination-bar button,
+.ds-clients-pagination-bar button,
+.ds-users-pagination-bar button,
+.ds-suppliers-pagination-bar button,
+.ds-purchase-pagination-bar button,
+.ds-sales-history-pagination-bar button,
+.ds-notifs-pagination-bar button {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: #f4f6fa;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: -4px -4px 8px rgba(255, 255, 255, 0.9), 4px 4px 8px rgba(187, 195, 206, 0.4);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.ds-clients-header-actions button:not([style]):hover,
+.ds-users-header-actions button:not([style]):hover,
+.ds-suppliers-header-actions button:not([style]):hover,
+.ds-purchase-header-actions button:not([style]):hover,
+.ds-sales-history-header-actions button:not([style]):hover,
+.ds-reports-header-actions button:not([style]):hover,
+.ds-notifs-header-actions button:not([style]):hover,
+.ds-stock-actions button:not([style]):hover,
+.ds-pform-actions button:not([style]):hover,
+.ds-pagination-bar button:hover,
+.ds-clients-pagination-bar button:hover,
+.ds-users-pagination-bar button:hover,
+.ds-suppliers-pagination-bar button:hover,
+.ds-purchase-pagination-bar button:hover,
+.ds-sales-history-pagination-bar button:hover,
+.ds-notifs-pagination-bar button:hover {
+  color: #2563eb;
+  box-shadow: -5px -5px 10px rgba(255, 255, 255, 0.95), 5px 5px 10px rgba(187, 195, 206, 0.45);
+}
+.ds-clients-header-actions button:not([style]):active,
+.ds-users-header-actions button:not([style]):active,
+.ds-suppliers-header-actions button:not([style]):active,
+.ds-purchase-header-actions button:not([style]):active,
+.ds-sales-history-header-actions button:not([style]):active,
+.ds-reports-header-actions button:not([style]):active,
+.ds-notifs-header-actions button:not([style]):active,
+.ds-stock-actions button:not([style]):active,
+.ds-pform-actions button:not([style]):active {
+  box-shadow: inset 3px 3px 6px rgba(187, 195, 206, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+}
+
+/* Boutons "primaire" repérés par classe utilitaire bleue dans les pages. */
+button.bg-blue-600,
+button[class*="bg-blue-600"] {
+  background: #2563eb;
+}
+button.bg-blue-600:hover,
+button[class*="bg-blue-600"]:hover {
+  background: #1d4ed8;
+}
+
+/* ── 7. Pavé numérique caisse (ds-pay-key) → touches blister ── */
+.ds-pay-key {
+  background: #f4f6fa !important;
+  border: 1px solid var(--demo-border);
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.9), 4px 4px 10px rgba(187, 195, 206, 0.4) !important;
+  border-radius: 1rem !important;
+  transition: all 0.2s ease;
+}
+.ds-pay-key:hover {
+  transform: translateY(-1px);
+  box-shadow: -5px -5px 12px rgba(255, 255, 255, 0.9), 5px 5px 12px rgba(187, 195, 206, 0.45) !important;
+}
+.ds-pay-key:active {
+  transform: scale(0.96);
+  box-shadow: inset 3px 3px 6px rgba(187, 195, 206, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.9) !important;
+}
+.ds-pay-key-alt {
+  color: #dc2626 !important;
+}
+
+[data-theme="dark"] .ds-pay-key {
+  background: var(--surface-card, #13233a) !important;
+  box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.03), 3px 3px 8px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Montant encaissement : mono bleu comme les prix demopharma. */
+.ds-pay-amount-display,
+.ds-pay-change-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 8. Cartes de feed notifications & panneaux rapports : respirations ── */
+.ds-notifs-feed-card {
+  border-radius: 1.25rem;
+}
+.ds-reports-ai-card {
+  background: #f4f6fa;
+  border: 1px solid var(--demo-border);
+  border-radius: 1.25rem;
+  box-shadow: var(--demo-raised);
+}
+[data-theme="dark"] .ds-reports-ai-card {
+  background: var(--surface-card, #13233a);
+}
+
+/* ── 9. Formulaires de saisie (ds-pform champs) ── */
+.ds-pform-fields input,
+.ds-pform-fields select,
+.ds-pform-fields textarea {
+  background: #f4f6fa;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1rem;
+  box-shadow: var(--demo-inset);
+  outline: none;
+}
+.ds-pform-fields input:focus,
+.ds-pform-fields select:focus,
+.ds-pform-fields textarea:focus {
+  box-shadow: var(--demo-inset), 0 0 0 2px rgba(37, 99, 235, 0.35);
+}
+
+[data-theme="dark"] .ds-pform-fields input,
+[data-theme="dark"] .ds-pform-fields select,
+[data-theme="dark"] .ds-pform-fields textarea {
+  background: var(--surface-card, #13233a);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── 10. Onglets paramètres / utilisateurs → segmented control démo ── */
+.ds-settings-tabs-wrap button,
+.ds-users-tabs-wrap button {
+  border-radius: 9999px;
+}
+.ds-settings-tabs-wrap,
+.ds-users-tabs-wrap {
+  background: #f4f6fa;
+  border-radius: 9999px;
+  box-shadow: -3px -3px 7px rgba(255, 255, 255, 0.9), 3px 3px 7px rgba(187, 195, 206, 0.4);
+  padding: 4px;
+}
+
+/* ── 11. Divers : tags catégorie fournisseurs, liens tél ── */
+.ds-suppliers-category-tag {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+.ds-suppliers-tel-link {
+  color: #2563eb;
+  font-weight: 600;
+}
+.ds-suppliers-tel-link:hover {
+  text-decoration: underline;
+}
+
+/* États vides */
+.ds-stock-empty,
+.ds-purchase-empty-td,
+.ds-sales-history-empty-td {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — couverture complète des éléments restés en clair
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Filtres latéraux en sombre ── */
+[data-theme="dark"] .ds-filter-item:hover {
+  background: rgba(30, 50, 77, 0.5);
+}
+[data-theme="dark"] .ds-filter-item.active {
+  background: #1e324d;
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .ds-filter-item.active .ds-filter-item-label {
+  color: #60a5fa;
+}
+[data-theme="dark"] .ds-filter-item-count {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+}
+[data-theme="dark"] .ds-filter-reset-btn:hover {
+  background: rgba(30, 50, 77, 0.6);
+}
+
+/* ── Boutons bruts des pages (section 6) en sombre ── */
+[data-theme="dark"] .ds-clients-header-actions button:not([style]),
+[data-theme="dark"] .ds-users-header-actions button:not([style]),
+[data-theme="dark"] .ds-suppliers-header-actions button:not([style]),
+[data-theme="dark"] .ds-purchase-header-actions button:not([style]),
+[data-theme="dark"] .ds-sales-history-header-actions button:not([style]),
+[data-theme="dark"] .ds-reports-header-actions button:not([style]),
+[data-theme="dark"] .ds-notifs-header-actions button:not([style]),
+[data-theme="dark"] .ds-stock-actions button:not([style]),
+[data-theme="dark"] .ds-pform-actions button:not([style]),
+[data-theme="dark"] .ds-pagination-bar button,
+[data-theme="dark"] .ds-clients-pagination-bar button,
+[data-theme="dark"] .ds-users-pagination-bar button,
+[data-theme="dark"] .ds-suppliers-pagination-bar button,
+[data-theme="dark"] .ds-purchase-pagination-bar button,
+[data-theme="dark"] .ds-sales-history-pagination-bar button,
+[data-theme="dark"] .ds-notifs-pagination-bar button {
+  background: var(--surface-card, #13233a);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  box-shadow: -3px -3px 8px rgba(255, 255, 255, 0.03), 3px 3px 8px rgba(0, 0, 0, 0.6);
+}
+[data-theme="dark"] .ds-clients-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-users-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-suppliers-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-purchase-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-sales-history-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-reports-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-notifs-header-actions button:not([style]):hover,
+[data-theme="dark"] .ds-stock-actions button:not([style]):hover,
+[data-theme="dark"] .ds-pform-actions button:not([style]):hover,
+[data-theme="dark"] .ds-pagination-bar button:hover,
+[data-theme="dark"] .ds-clients-pagination-bar button:hover,
+[data-theme="dark"] .ds-users-pagination-bar button:hover,
+[data-theme="dark"] .ds-suppliers-pagination-bar button:hover,
+[data-theme="dark"] .ds-purchase-pagination-bar button:hover,
+[data-theme="dark"] .ds-sales-history-pagination-bar button:hover,
+[data-theme="dark"] .ds-notifs-pagination-bar button:hover {
+  color: #60a5fa;
+  box-shadow: -4px -4px 10px rgba(255, 255, 255, 0.05), 4px 4px 10px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Onglets segmented control en sombre ── */
+[data-theme="dark"] .ds-settings-tabs-wrap,
+[data-theme="dark"] .ds-users-tabs-wrap {
+  background: var(--surface-card, #13233a);
+  box-shadow: -3px -3px 7px rgba(255, 255, 255, 0.03), 3px 3px 7px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Tags catégorie fournisseurs & liens tél en sombre ── */
+[data-theme="dark"] .ds-suppliers-category-tag {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+}
+[data-theme="dark"] .ds-suppliers-tel-link {
+  color: #60a5fa;
+}
+
+/* ── Touche C× du pavé numérique : rouge lisible en sombre ── */
+[data-theme="dark"] .ds-pay-key-alt {
+  color: #f87171 !important;
+}
+
+/* ── Scrollbars & sélection en sombre ── */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #223f66;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #334f7d;
+}
+[data-theme="dark"] ::selection {
+  background: #1e3a8a;
+}

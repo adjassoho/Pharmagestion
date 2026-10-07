@@ -1,0 +1,45 @@
+name: CI Delivery Gates
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  validate:
+    name: Typecheck, Test, Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript Static Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Unit Tests Suite
+        run: pnpm test:unit
+
+      - name: Production Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://mock-supabase.example.com"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "mock-anon-key-ci-pipeline-12345"
+
+      - name: ESLint Verification
+        run: pnpm lint

@@ -1,0 +1,2705 @@
+Document
+SECS - Dossier technique & stack technologique (PWA installable)
+SECS - DOSSIER TECHNIQUE & STACK TECHNOLOGIQUE
+Projet :
+SECS (Système d'Exécution et de Contrôle des Stocks)
+Type d'application :
+PWA (Progressive Web App) installable sur Android, iOS, iPadOS, Windows, macOS, Linux, ChromeOS
+Contexte :
+Quincailleries et commerces de matériaux de construction - marché béninois
+Auteur :
+ADJASSOHO Silvère
+Date :
+29/07/2026
+Version :
+1.0
+Note : la maquette
+https://obasa-design-maquette.vercel.app/maquette-uiux
+n'a pas pu être lue automatiquement (rendu 100% client-side / accès bloqué au crawl). Le présent document se base sur le cahier des charges SECS et sur les standards d'intégration. La section 5 (design system) devra être ajustée après extraction des tokens réels de la maquette (couleurs, typographies, spacing, composants).
+1. RÉSUMÉ EXÉCUTIF - LE VERDICT
+SECS n'est pas un site vitrine. C'est
+un logiciel de caisse
+. Ça change tout : il doit démarrer en moins de 2 secondes, fonctionner
+sans internet
+, encaisser sans jamais se bloquer, et s'installer comme une vraie app sur n'importe quel appareil.
+Stack retenue (recommandation forte) :
+Couche
+Technologie
+Front-end
+Next.js 15
+(App Router) +
+React 19
++
+TypeScript 5.x
+UI
+Tailwind CSS 4
++
+shadcn/ui
+(Radix UI) +
+Lucide icons
+PWA / Service Worker
+Serwist
+(successeur de next-pwa / Workbox)
+Base locale offline
+IndexedDB
+via
+Dexie.js 4
++
+dexie-react-hooks
+État / data
+TanStack Query v5
+(server state) +
+Zustand
+(state UI/panier)
+Formulaires / validation
+React Hook Form
++
+Zod
+(schémas partagés front/back)
+Backend / API
+Supabase
+(PostgreSQL + Auth + Storage + Realtime + Edge Functions)
+Base de données
+PostgreSQL 16
+(+
+pg_trgm
+,
+unaccent
+,
+ltree
+,
+pgvector
+)
+Stockage images
+Supabase Storage
+(compatible S3) + transformations d'image
+PDF factures
+pdf-lib
+(client, offline) +
+@react-pdf/renderer
+(rapports)
+Impression
+ESC/POS
+via Web Bluetooth / WebUSB + fallback
+window.print()
+Excel
+SheetJS (xlsx)
+dans un
+Web Worker
+Graphiques
+Recharts
+(ou
+ECharts
+si besoins avancés)
+Hébergement
+Vercel
+(front) +
+Supabase Cloud
+(data) — alternative VPS Docker
+Monitoring
+Sentry
++
+Vercel Analytics
++
+PostHog
+(optionnel)
+CI/CD
+GitHub Actions
++ Preview deployments Vercel
+Pourquoi Next.js ?
+Routing, rendu serveur pour les pages publiques/SEO, Server Actions, optimisation d'images et déploiement zéro-config dans un seul repo.
+Pourquoi Supabase ?
+Authentification, RBAC, Storage, API REST, Realtime et Edge Functions sont réunis autour de PostgreSQL.
+2. CONTRAINTES QUI DICTENT LA STACK
+Ces 8 contraintes viennent directement du cahier des charges. Chaque choix technique en découle.
+#
+Contrainte
+Conséquence technique
+1
+La caisse doit fonctionner
+dès le jour 1
+, sans stock saisi
+Aucune contrainte FK bloquante sur les quantités ; stock négatif autorisé
+2
+Connexion internet
+instable
+(Bénin)
+Architecture
+offline-first obligatoire
+, pas "offline bonus"
+3
+Installable sur
+tout OS
+PWA + manifest + service worker + gestion des cas iOS
+4
+1000+ références
+avec photos, recherche instantanée
+Index local IndexedDB + recherche full-text côté client + images en cache
+5
+Traçabilité de
+qui a fait quoi
+Audit log immuable + auth par utilisateur (PIN rapide en caisse)
+6
+Hiérarchie produits (familles → variantes)
+Modèle arborescent en base (
+ltree
+ou adjacency list)
+7
+Facturation + impression immédiate
+PDF généré
+côté client
+(fonctionne offline) + ESC/POS
+8
+Évolution vers ERP + IA
+Schéma normalisé, API documentée, modularité, données horodatées
+3. ARCHITECTURE GÉNÉRALE
+┌─────────────────────────────────────────────────────────────────┐
+│                    APPAREIL (téléphone / PC / tablette)         │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │   PWA SECS (installée, icône sur l'écran d'accueil)       │  │
+│  │                                                           │  │
+│  │   UI React 19 / Next.js App Router                        │  │
+│  │   ├── /caisse        (offline total)                       │  │
+│  │   ├── /produits      (offline lecture, écriture en file)   │  │
+│  │   ├── /stocks        (offline lecture)                     │  │
+│  │   ├── /dashboard     (online, cache 5 min)                 │  │
+│  │   ├── /rapports      (online)                              │  │
+│  │   └── /admin         (online)                              │  │
+│  │                                                           │  │
+│  │   ┌─────────────────┐   ┌──────────────────────────────┐   │  │
+│  │   │  Dexie/IndexedDB │  │  Service Worker (Serwist)    │   │  │
+│  │   │  - produits      │  │  - precache app shell        │   │  │
+│  │   │  - catégories    │  │  - cache images produits     │   │  │
+│  │   │  - prix          │  │  - Background Sync           │   │  │
+│  │   │  - ventes (out)  │  │  - update prompt             │   │  │
+│  │   │  - outbox queue  │  └──────────────────────────────┘   │  │
+│  │   └─────────────────┘                                      │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │  HTTPS / WebSocket (quand dispo)
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  VERCEL EDGE  ·  Next.js SSR + Server Actions + Route Handlers  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  SUPABASE                                                       │
+│  ├── PostgreSQL 16  (données métier, RLS, vues matérialisées)   │
+│  ├── Auth           (JWT, rôles, PIN caissier)                   │
+│  ├── Storage        (photos produits, PDF archivés)              │
+│  ├── Realtime       (alertes stock, sync multi-postes)            │
+│  ├── Edge Functions (import Excel lourd, rapports, cron)          │
+│  └── pgvector       (phase 5 - IA métier)                        │
+└─────────────────────────────────────────────────────────────────┘
+Principe directeur :
+l'appareil est la source de vérité temporaire, le serveur est la source de vérité définitive. Toute écriture part en local d'abord (optimistic), puis remonte.
+4. STACK FRONT-END DÉTAILLÉE
+4.1 Socle
+Rôle
+Paquet
+Version cible
+Justification
+Framework
+next
+15.x
+App Router, Server Actions, image optimization, RSC
+Runtime UI
+react
+/
+react-dom
+19.x
+useOptimistic
+,
+useFormStatus
+(parfaits pour la caisse offline)
+Langage
+typescript
+5.6+
+Typage strict obligatoire (
+strict: true
+,
+noUncheckedIndexedAccess
+)
+Runtime Node
+Node.js
+22 LTS
+Support Next 15
+Gestionnaire de paquets
+pnpm
+9.x
+Rapide, disque économe, workspaces
+4.2 UI & design system
+Rôle
+Paquet
+Justification
+CSS
+tailwindcss
+4
+Vitesse d'intégration, purge auto, cohérence
+Composants
+shadcn/ui
+Code copié dans ton repo = tu le possèdes, pas de dépendance lourde
+Primitives accessibles
+radix-ui
+Clavier, focus trap, ARIA gratuits
+Icônes
+lucide-react
+Léger, tree-shakable
+Animations
+framer-motion
+(usage minimal)
+Feedback tactile, transitions panier
+Tableaux
+@tanstack/react-table
+v8
+Tri, filtres, virtualisation des 1000 produits
+Virtualisation
+@tanstack/react-virtual
+Listes de 1000+ lignes fluides sur mobile bas de gamme
+Toasts
+sonner
+Feedback "vente enregistrée", "hors ligne"
+Thème
+next-themes
+Mode sombre (utile en boutique sombre / écran lumineux)
+4.3 État & données
+Rôle
+Paquet
+Notes
+Server state
+@tanstack/react-query
+v5
+persistQueryClient
++
+IDBPersister
+pour survivre au reload offline
+État global UI
+zustand
+Panier, session caissier, mode offline. Persisté dans IndexedDB
+Base locale
+dexie
+4 +
+dexie-react-hooks
+Requêtes réactives (
+useLiveQuery
+) = UI toujours à jour
+Formulaires
+react-hook-form
++
+@hookform/resolvers
+Perf (pas de re-render global)
+Validation
+zod
+3
+Schémas partagés
+front ↔ back ↔ import Excel
+Dates
+date-fns
++
+date-fns-tz
+Timezone
+Africa/Porto-Novo
+figée côté serveur
+Montants
+dinero.js
+ou entiers en XOF
+Jamais de float sur l'argent
+(voir 4.5)
+4.4 Utilitaires métier
+Besoin
+Paquet
+Génération PDF facture (offline)
+pdf-lib
+Rapports PDF complexes
+@react-pdf/renderer
+Import/Export Excel
+xlsx
+(SheetJS) dans un Web Worker via
+comlink
+Compression d'images avant upload
+browser-image-compression
+Scan code-barres
+BarcodeDetector
+API native + fallback
+@zxing/browser
+Impression thermique
+esc-pos-encoder
+(ou encodeur maison) + Web Bluetooth/WebUSB
+Graphiques
+recharts
+IDs client
+uuid
+v7 (triable dans le temps)
+Web Worker ergonomie
+comlink
+4.5 Règle non négociable sur l'argent
+Le
+franc CFA (XOF) n'a pas de sous-unité
+. Tous les montants sont des
+entiers
+(
+integer
+/
+bigint
+en base). Aucun
+float
+, aucun
+numeric
+à virgule pour les prix de vente.
+Prix, totaux, monnaie rendue :
+integer
+(FCFA)
+Formatage d'affichage :
+Intl.NumberFormat('fr-BJ', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 })
+Marges et taux : calculés en
+numeric(10,4)
+mais
+jamais stockés comme prix
+Arrondis d'encaissement (pièces de 5 F) : règle métier explicite, arrondi à l'unité de 5 configurable
+5. LA COUCHE PWA - LE CŒUR DE TA DEMANDE
+Objectif :
+l'utilisateur va sur le site, il installe, ça devient une app sur son appareil, quel que soit l'OS.
+5.1 Les 4 conditions techniques obligatoires
+HTTPS
+partout (fourni par Vercel automatiquement)
+Un
+manifest.webmanifest
+valide et lié dans le
+<head>
+Un Service Worker
+enregistré, avec au minimum un handler
+fetch
+et une page offline
+Des icônes
+aux bons formats, dont au moins une
+512x512
+et une
+maskable
+Si une seule manque, Chrome n'affiche pas le bouton "Installer". C'est binaire.
+5.2 Le manifest complet (fichier
+app/manifest.ts
+)
+import type { MetadataRoute } from 'next'
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    id: '/?source=pwa',
+    name: 'SECS - Système d\'Exécution et de Contrôle des Stocks',
+    short_name: 'SECS',
+    description: 'Caisse, facturation, stocks et pilotage pour quincailleries et matériaux de construction.',
+    lang: 'fr-BJ',
+    dir: 'ltr',
+    start_url: '/caisse?source=pwa',
+    scope: '/',
+    display: 'standalone',
+    display_override: ['window-controls-overlay', 'standalone', 'minimal-ui'],
+    orientation: 'any',
+    background_color: '#ffffff',
+    theme_color: '#0f172a',
+    categories: ['business', 'productivity', 'finance'],
+    prefer_related_applications: false,
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-256.png', sizes: '256x256', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-384.png', sizes: '384x384', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+    shortcuts: [
+      { name: 'Nouvelle vente', short_name: 'Caisse', url: '/caisse?source=shortcut', icons: [{ src: '/icons/shortcut-caisse.png', sizes: '96x96' }] },
+      { name: 'Ajouter un produit', url: '/produits/nouveau', icons: [{ src: '/icons/shortcut-produit.png', sizes: '96x96' }] },
+      { name: 'Tableau de bord', url: '/dashboard', icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96' }] },
+      { name: 'Entrée de stock', url: '/stocks/entrees', icons: [{ src: '/icons/shortcut-stock.png', sizes: '96x96' }] },
+    ],
+    screenshots: [
+      { src: '/screenshots/caisse-mobile.png', sizes: '540x720', type: 'image/png', form_factor: 'narrow', label: 'Écran de caisse' },
+      { src: '/screenshots/dashboard-desktop.png', sizes: '1280x800', type: 'image/png', form_factor: 'wide', label: 'Tableau de bord' },
+    ],
+    file_handlers: [
+      { action: '/produits/import', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'], 'text/csv': ['.csv'] } },
+    ],
+    launch_handler: { client_mode: 'focus-existing' },
+    protocol_handlers: [],
+  }
+}
+Points critiques :
+screenshots
+avec
+form_factor
+: indispensable pour que Chrome Android affiche la
+grande fiche d'installation enrichie
+(bien plus convaincante que la mini-barre).
+id
+figé : évite qu'un changement de
+start_url
+crée une "nouvelle app" aux yeux du navigateur.
+display_override
+avec
+window-controls-overlay
+: sur desktop, l'app peut occuper toute la fenêtre, look natif.
+shortcuts
+: appui long sur l'icône → "Nouvelle vente". Gain de temps réel en boutique.
+file_handlers
+: double-clic sur un
+.xlsx
+sous Windows → ouvre SECS sur l'import.
+5.3 Assets à produire (liste exhaustive)
+Fichier
+Dimensions
+Usage
+/icons/icon-192.png
+192×192
+Android, manifest
+/icons/icon-256.png
+256×256
+Desktop
+/icons/icon-384.png
+384×384
+Android densité élevée
+/icons/icon-512.png
+512×512
+Obligatoire
+pour l'installabilité
+/icons/maskable-192.png
+192×192
+Icône adaptative Android (safe zone 40% centrale)
+/icons/maskable-512.png
+512×512
+Icône adaptative Android
+/apple-touch-icon.png
+180×180
+iOS/iPadOS
+(obligatoire, sinon iOS met une capture d'écran)
+/favicon.ico
+32×32 + 16×16
+Onglet navigateur
+/icons/favicon.svg
+vectoriel
+Onglets modernes
+/icons/shortcut-*.png
+96×96
+Raccourcis manifest
+/screenshots/*.png
+540×720 / 1280×800
+Fiche d'installation
+Splash screens iOS
+20 tailles
+Écran de lancement iOS (voir 5.6)
+Outil recommandé :
+pwa-asset-generator
+pour générer les 20 splash screens iOS et les icônes en une commande. À automatiser dans le CI.
+5.4 Service Worker avec Serwist
+next-pwa
+n'est plus maintenu activement.
+Serwist
+est le successeur officiel, compatible Next 15 / App Router.
+Installation :
+pnpm add @serwist/next serwist
+next.config.ts
+:
+import withSerwistInit from '@serwist/next'
+
+const withSerwist = withSerwistInit({
+  swSrc: 'app/sw.ts',
+  swDest: 'public/sw.js',
+  cacheOnNavigation: true,
+  reloadOnOnline: false, // on ne veut JAMAIS recharger pendant un encaissement
+  disable: process.env.NODE_ENV === 'development',
+})
+
+export default withSerwist({
+  reactStrictMode: true,
+  images: { formats: ['image/avif', 'image/webp'], remotePatterns: [{ protocol: 'https', hostname: '*.supabase.co' }] },
+})
+app/sw.ts
+- stratégies de cache par type de ressource :
+import { defaultCache } from '@serwist/next/worker'
+import { Serwist, NetworkFirst, CacheFirst, StaleWhileRevalidate, ExpirationPlugin, BackgroundSyncQueue } from 'serwist'
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: false,          // on demande à l'utilisateur avant de mettre à jour
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: [
+    // 1. App shell & pages : réseau d'abord, cache en secours, timeout court
+    {
+      matcher: ({ request }) => request.mode === 'navigate',
+      handler: new NetworkFirst({
+        cacheName: 'secs-pages',
+        networkTimeoutSeconds: 3,
+        plugins: [new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 30 * 24 * 3600 })],
+      }),
+    },
+    // 2. Photos produits : cache d'abord (elles ne changent presque jamais)
+    {
+      matcher: ({ url }) => url.pathname.includes('/storage/v1/object/public/produits'),
+      handler: new CacheFirst({
+        cacheName: 'secs-images-produits',
+        plugins: [new ExpirationPlugin({ maxEntries: 2000, maxAgeSeconds: 180 * 24 * 3600, purgeOnQuotaError: true })],
+      }),
+    },
+    // 3. Polices
+    {
+      matcher: ({ request }) => request.destination === 'font',
+      handler: new CacheFirst({ cacheName: 'secs-fonts' }),
+    },
+    // 4. Référentiel produits (API) : SWR pour un affichage instantané puis rafraîchissement
+    {
+      matcher: ({ url }) => url.pathname.startsWith('/api/referentiel'),
+      handler: new StaleWhileRevalidate({ cacheName: 'secs-referentiel' }),
+    },
+    ...defaultCache,
+  ],
+  fallbacks: {
+    entries: [{ url: '/offline', matcher: ({ request }) => request.destination === 'document' }],
+  },
+})
+
+// Background Sync : les ventes créées offline partent dès le retour du réseau
+const ventesQueue = new BackgroundSyncQueue('secs-ventes-queue', { maxRetentionTime: 14 * 24 * 60 })
+self.addEventListener('fetch', (event) => {
+  if (event.request.method === 'POST' && new URL(event.request.url).pathname === '/api/ventes') {
+    event.respondWith(
+      fetch(event.request.clone()).catch(async () => {
+        await ventesQueue.pushRequest({ request: event.request })
+        return new Response(JSON.stringify({ queued: true }), { status: 202, headers: { 'Content-Type': 'application/json' } })
+      })
+    )
+  }
+})
+
+serwist.addEventListeners()
+Décision importante :
+skipWaiting: false
+****
+.
+On ne met
+jamais
+à jour l'app pendant qu'un caissier a un panier ouvert. On affiche un toast "Nouvelle version disponible - Mettre à jour", et l'utilisateur décide.
+5.5 Le composant d'installation cross-OS
+C'est le point exact de ta demande. Le comportement diffère selon l'OS, il faut donc un composant intelligent.
+'use client'
+import { useEffect, useState } from 'react'
+
+type Platform = 'android-chrome' | 'ios-safari' | 'desktop-chromium' | 'desktop-safari' | 'firefox' | 'installed' | 'unknown'
+
+function detectPlatform(): Platform {
+  if (typeof window === 'undefined') return 'unknown'
+  const ua = navigator.userAgent
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+    (window.navigator as any).standalone === true
+  if (isStandalone) return 'installed'
+
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  if (isIOS) return 'ios-safari'
+  if (/Android/.test(ua)) return 'android-chrome'
+  if (/Firefox/.test(ua)) return 'firefox'
+  if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) return 'desktop-safari'
+  return 'desktop-chromium'
+}
+
+export function InstallSECS() {
+  const [platform, setPlatform] = useState<Platform>('unknown')
+  const [prompt, setPrompt] = useState<any>(null)
+
+  useEffect(() => {
+    setPlatform(detectPlatform())
+    const onPrompt = (e: Event) => { e.preventDefault(); setPrompt(e) }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', () => { setPrompt(null); setPlatform('installed') })
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
+  }, [])
+
+  if (platform === 'installed') return null
+
+  // Cas 1 : Chrome/Edge Android, Windows, macOS, Linux, ChromeOS → installation en 1 clic
+  if (prompt) {
+    return (
+      <button onClick={async () => {
+        prompt.prompt()
+        const { outcome } = await prompt.userChoice
+        if (outcome === 'accepted') setPrompt(null)
+      }}>
+        Installer SECS sur cet appareil
+      </button>
+    )
+  }
+
+  // Cas 2 : iOS / iPadOS Safari → instructions manuelles illustrées (pas d'API disponible)
+  if (platform === 'ios-safari') {
+    return <IosInstallSheet /> // "Partager" → "Sur l'écran d'accueil" → "Ajouter"
+  }
+
+  // Cas 3 : Safari macOS 17+ → menu Fichier → Ajouter au Dock
+  if (platform === 'desktop-safari') {
+    return <SafariMacInstructions />
+  }
+
+  // Cas 4 : Firefox → pas d'installation PWA. On propose Chrome/Edge ou l'usage navigateur.
+  if (platform === 'firefox') {
+    return <FirefoxNotice />
+  }
+
+  return null
+}
+5.6 Matrice d'installation réelle par système (soyons honnêtes)
+OS / Navigateur
+Installation
+Méthode
+Notifications push
+Limites
+Android - Chrome
+✅ Native, 1 clic
+beforeinstallprompt
++ fiche enrichie
+✅
+Aucune
+Android - Edge / Samsung Internet / Brave
+✅
+Idem
+✅
+Aucune
+Android - Firefox
+⚠️ Partielle
+"Ajouter à l'écran d'accueil" (raccourci)
+✅
+Pas de vraie fenêtre standalone
+iOS / iPadOS 16.4+ - Safari
+✅
+Manuel
+: Partager → Sur l'écran d'accueil
+✅ (16.4+,
+uniquement si installée
+)
+Pas de
+beforeinstallprompt
+. Obligation de passer par Safari
+iOS - Chrome / Firefox
+❌
+Impossible d'installer une PWA
+❌
+Ils utilisent WebKit mais sans l'API.
+Il faut rediriger vers Safari
+Windows - Chrome / Edge
+✅ Native
+Icône dans la barre d'adresse ou
+beforeinstallprompt
+✅
+Aucune. Apparaît dans le menu Démarrer
+macOS - Chrome / Edge
+✅ Native
+Idem
+✅
+Aucune
+macOS 14+ - Safari 17+
+✅
+Fichier →
+Ajouter au Dock
+✅
+Pas de prompt programmable
+Linux - Chrome / Chromium / Edge
+✅ Native
+Idem Windows
+✅
+Aucune
+ChromeOS
+✅ Native
+Idem
+✅
+Support excellent
+Conséquences opérationnelles à assumer :
+iOS est le seul cas frictionnel.
+Il faut une modale d'onboarding illustrée (captures avec flèches) qui montre les 3 gestes. Détecter aussi le cas "utilisateur sur iOS mais dans Chrome/Instagram/WhatsApp webview" et afficher :
+"Ouvre ce lien dans Safari pour installer SECS"
+avec un bouton de copie de l'URL.
+Splash screens iOS
+: iOS n'utilise pas
+background_color
+. Il faut 20 balises
+<link rel="apple-touch-startup-image" media="...">
+générées par
+pwa-asset-generator
+, sinon écran blanc au lancement.
+Meta tags iOS obligatoires
+dans le layout :
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="SECS" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+Purge du stockage iOS
+: Safari supprime IndexedDB après
+7 jours sans utilisation
+de l'app...
+sauf si la PWA est installée sur l'écran d'accueil
+. Raison supplémentaire pour pousser l'installation. Appeler aussi
+navigator.storage.persist()
+au premier lancement.
+Quota de stockage
+: vérifier
+navigator.storage.estimate()
+au démarrage. Si le quota restant est < 50 Mo, purger les images produits les moins consultées (LRU).
+5.7 Si un jour tu veux les stores (Play Store / App Store)
+Pas nécessaire pour SECS (c'est un outil B2B, pas une app grand public), mais possible
+sans réécrire une ligne
+:
+Cible
+Outil
+Résultat
+Google Play
+PWABuilder
+→ Trusted Web Activity (TWA) /
+bubblewrap
+APK/AAB qui embarque ta PWA. Accepté par Google
+Microsoft Store
+PWABuilder
+Package MSIX
+App Store
+Capacitor
+(wrapper WebView)
+Apple refuse les simples wrappers. Il faut apporter du natif (impression Bluetooth native, scan) pour passer la revue
+Recommandation :
+reste en PWA pure
+. Zéro friction de déploiement, mises à jour instantanées, pas de commission, pas de revue Apple. Tu déploies un correctif à 14h, tous les postes l'ont à 14h01.
+5.8 APIs web avancées à exploiter (le "presque natif")
+API
+Usage dans SECS
+Support
+Background Sync
+Envoi des ventes offline dès retour réseau
+Chromium ✅ / Safari ❌ (fallback : sync au
+online
+event)
+Periodic Background Sync
+Rafraîchir le référentiel produits la nuit
+Chromium (PWA installée)
+Web Push + Notifications
+Alerte rupture de stock, résumé du jour
+Chromium ✅ / iOS 16.4+ si installée ✅
+Badging API
+(
+setAppBadge
+)
+Nombre de produits en rupture sur l'icône
+Chromium desktop + Android
+Screen Wake Lock
+Empêcher l'écran de s'éteindre en mode caisse
+Chromium ✅
+BarcodeDetector
+Scan des codes-barres produits par la caméra
+Chrome Android ✅ / fallback ZXing partout
+Web Bluetooth
+Imprimante thermique ESC/POS sans câble
+Chrome/Edge Android + desktop. ❌ iOS/Safari
+WebUSB
+Imprimante USB, tiroir-caisse
+Chromium desktop
+Web Share / Share Target
+Partager une facture par WhatsApp
+Android ✅, iOS ✅
+File System Access API
+Sauvegarde locale d'export Excel
+Chromium
+Storage Manager
+(
+persist
+)
+Empêcher la purge de l'IndexedDB
+Chromium + Safari
+Vibration API
+Feedback sur ajout au panier
+Android
+Network Information API
+Afficher "connexion lente, mode économie"
+Chromium
+6. OFFLINE-FIRST & SYNCHRONISATION - LA PARTIE LA PLUS DÉLICATE
+C'est ici que 90% des projets de caisse échouent. À traiter avec un soin obsessionnel.
+6.1 Schéma de la base locale (Dexie)
+import Dexie, { type Table } from 'dexie'
+
+export interface ProduitLocal {
+  id: string                 // uuid v7
+  reference: string
+  nom: string
+  nom_normalise: string      // sans accents, minuscules → recherche rapide
+  categorie_id: string
+  chemin_categorie: string   // "Fer > Fer à béton"
+  code_barre?: string
+  unite: string              // pièce, kg, sac, litre, mètre
+  prix_vente: number         // entier FCFA
+  prix_achat?: number        // entier FCFA (masqué aux caissiers)
+  stock_theorique: number | null   // null = non renseigné, JAMAIS bloquant
+  seuil_alerte: number | null
+  image_url?: string
+  image_thumb_url?: string
+  actif: boolean
+  updated_at: string         // ISO, sert au sync delta
+  version: number
+}
+
+export interface VenteLocale {
+  id: string                 // uuid v7 généré CÔTÉ CLIENT = clé d'idempotence
+  numero_local: string       // ex: "C1-20260729-0042"
+  numero_serveur?: string    // attribué après sync
+  poste_id: string
+  caissier_id: string
+  lignes: LigneVente[]
+  total: number
+  montant_recu: number
+  monnaie_rendue: number
+  mode_paiement: 'especes' | 'mobile_money' | 'virement' | 'credit'
+  client_nom?: string
+  client_telephone?: string
+  cree_le: string            // horodatage LOCAL de la vente (vérité métier)
+  sync_status: 'pending' | 'syncing' | 'synced' | 'conflict' | 'failed'
+  sync_tentatives: number
+  sync_erreur?: string
+}
+
+export interface OutboxItem {
+  id: string
+  type: 'vente' | 'produit_create' | 'produit_update' | 'mouvement_stock' | 'inventaire'
+  payload: unknown
+  cree_le: string
+  tentatives: number
+  derniere_erreur?: string
+  priorite: number           // 1 = vente (max), 5 = reste
+}
+
+class SecsDB extends Dexie {
+  produits!: Table<ProduitLocal, string>
+  categories!: Table<CategorieLocale, string>
+  ventes!: Table<VenteLocale, string>
+  outbox!: Table<OutboxItem, string>
+  meta!: Table<{ cle: string; valeur: unknown }, string>
+
+  constructor() {
+    super('secs')
+    this.version(1).stores({
+      produits: 'id, reference, nom_normalise, categorie_id, code_barre, updated_at, actif',
+      categories: 'id, parent_id, nom_normalise',
+      ventes: 'id, numero_local, sync_status, cree_le, caissier_id',
+      outbox: 'id, type, priorite, cree_le',
+      meta: 'cle',
+    })
+  }
+}
+export const db = new SecsDB()
+6.2 Le pattern Outbox (file d'attente sortante)
+Règle absolue : la caisse n'attend jamais le réseau.
+Encaissement validé
+   ↓
+1. Écriture immédiate dans Dexie (ventes + outbox)   ← instantané, ~5 ms
+2. Facture PDF générée localement avec pdf-lib        ← instantané, offline
+3. Impression envoyée à l'imprimante                  ← instantané
+4. UI : "Vente enregistrée" + monnaie à rendre         ← instantané
+   ↓ (en tâche de fond, invisible pour le caissier)
+5. Le worker de sync tente l'envoi au serveur
+6. Si échec → retry avec backoff exponentiel (1s, 2s, 4s... max 5 min)
+7. Si succès → sync_status = 'synced', numero_serveur enregistré
+Idempotence :
+l'
+id
+(uuid v7) est généré par le client et sert de clé primaire côté serveur. Si le réseau coupe après l'écriture serveur mais avant la réponse, le retry ne crée pas de doublon (
+INSERT ... ON CONFLICT (id) DO NOTHING
+).
+6.3 Numérotation des factures en mode offline
+Problème classique : deux postes offline génèrent la facture n°43.
+Solution : numérotation composite.
+{PREFIXE_POSTE}-{YYYYMMDD}-{SEQUENCE_LOCALE}
+Exemple : C1-20260729-0042
+Chaque poste de caisse reçoit un
+préfixe unique
+à l'enrôlement (C1, C2, C3...)
+La séquence est locale au poste et à la journée →
+aucune collision possible
+Le serveur peut, si l'exigence fiscale l'impose, attribuer en plus un
+numéro séquentiel global
+à la synchronisation, conservé en parallèle du numéro local (les deux figurent sur la facture réimprimée)
+6.4 Synchronisation descendante (serveur → appareil)
+Sync delta basée sur
+updated_at
+(pas de rechargement complet des 1000 produits à chaque fois) :
+async function syncDescendant() {
+  const dernierSync = await db.meta.get('dernier_sync_produits')
+  const { data } = await supabase
+    .from('produits')
+    .select('*')
+    .gt('updated_at', dernierSync?.valeur ?? '1970-01-01')
+    .order('updated_at', { ascending: true })
+    .limit(500)
+
+  await db.transaction('rw', db.produits, db.meta, async () => {
+    await db.produits.bulkPut(data.map(mapVersLocal))
+    await db.meta.put({ cle: 'dernier_sync_produits', valeur: data.at(-1)?.updated_at })
+  })
+}
+Déclencheurs de sync :
+Au lancement de l'app
+À la reconnexion (
+window.addEventListener('online')
+)
+Toutes les 5 minutes si online (avec
+visibilitychange
+pour ne pas tourner en arrière-plan inutilement)
+Sur notification Supabase Realtime (changement de prix par exemple)
+Manuellement (bouton "Synchroniser" avec compteur d'éléments en attente)
+6.5 Résolution de conflits
+Type de donnée
+Stratégie
+Justification
+Vente
+Aucun conflit possible (append-only, id client)
+Une vente est un fait, pas un état
+Prix de vente
+Serveur gagne
+(LWW sur
+updated_at
+)
+Le gérant décide des prix
+Fiche produit
+Serveur gagne, mais conflit signalé à l'admin
+Évite les écrasements silencieux
+Stock
+Somme des mouvements
+, jamais un état absolu
+Deux postes qui vendent en même temps doivent tous deux déduire
+Inventaire
+Dernière saisie datée gagne, avec historique conservé
+Traçabilité
+Le stock ne doit JAMAIS être une simple colonne
+quantite
+qu'on écrase.
+C'est un
+SUM()
+sur la table
+mouvements_stock
+, avec une colonne
+stock_cache
+recalculée par trigger pour la performance. C'est la seule façon de survivre au multi-poste offline.
+6.6 Indicateur d'état - UX obligatoire
+Un badge permanent en haut de l'écran de caisse :
+État
+Affichage
+Online, tout synchronisé
+🟢
+À jour
+Online, sync en cours
+🔵
+Synchronisation… 12 ventes
+Offline, file vide
+🟡
+Hors ligne
+Offline, ventes en attente
+🟠
+Hors ligne · 8 ventes en attente
+Échecs répétés
+🔴
+Problème de synchronisation
++ bouton diagnostic
+Le caissier doit
+toujours
+savoir où il en est. Et il doit être
+impossible
+de fermer la journée avec des ventes non synchronisées sans un avertissement explicite.
+7. MODULE CAISSE - SPÉCIFICATIONS TECHNIQUES
+Module
+critique
+du cahier des charges. Il mérite son propre chapitre.
+7.1 Recherche produit instantanée (offline)
+Exigence : trouver un produit parmi 1000+ en moins de 100 ms, sans réseau, avec fautes de frappe tolérées.
+Architecture de recherche à 3 niveaux :
+Normalisation à l'écriture
+: chaque produit stocke
+nom_normalise
+(minuscules, sans accents, sans ponctuation) + un champ
+mots_cles
+concaténant nom + référence + catégorie + synonymes métier.
+Index local en mémoire
+: au démarrage, charger un index
+MiniSearch
+ou
+FlexSearch
+(~200 Ko pour 1000 produits) construit depuis Dexie. Recherche floue, préfixe, multi-mots, tolérance aux fautes.
+Fallback code-barres
+: scan caméra via
+BarcodeDetector
+→ recherche exacte sur
+code_barre
+.
+import MiniSearch from 'minisearch'
+
+const index = new MiniSearch({
+  fields: ['nom_normalise', 'reference', 'chemin_categorie', 'mots_cles'],
+  storeFields: ['id', 'nom', 'reference', 'prix_vente', 'image_thumb_url', 'stock_theorique', 'unite'],
+  searchOptions: { prefix: true, fuzzy: 0.2, boost: { reference: 3, nom_normalise: 2 } },
+})
+Synonymes métier béninois à intégrer dans
+mots_cles
+(indispensable pour l'adoption terrain) :
+fer à béton
+↔
+fer
+,
+tôle
+↔
+tole
+,
+ciment
+↔
+sac
+,
+pointe
+↔
+clou
+,
+contreplaqué
+↔
+CP
+, etc. Table
+synonymes
+administrable, pas de valeurs codées en dur.
+7.2 Interface caisse - contraintes ergonomiques
+Exigence
+Implémentation
+Utilisable au doigt sur mobile
+Cibles tactiles ≥ 48×48 px, pas de hover-only
+Utilisable au clavier sur PC
+Raccourcis :
+F2
+recherche,
+F4
+encaisser,
+Échap
+annuler,
++/-
+quantité,
+Entrée
+valider
+Photo produit visible dans la recherche
+Exigence explicite du cahier des charges
+: vignette 64×64 WebP en cache, placeholder blur
+Grille visuelle des produits fréquents
+"Top 20 des ventes" en boutons-images sur l'écran d'accueil caisse
+Panier persistant
+Zustand +
+persist
+dans IndexedDB : si l'app crashe ou la batterie meurt, le panier est intact au redémarrage
+Calcul monnaie automatique
+Recalcul à chaque frappe + suggestions de coupures (500, 1000, 2000, 5000, 10000 FCFA)
+Prix modifiable
+Autorisé si rôle le permet,
+avec motif obligatoire
+et trace dans l'audit log
+Remise
+Montant ou %, plafonnée par rôle, tracée
+Vente sans stock
+Jamais bloquée.
+Si
+stock_theorique <= 0
+ou
+null
+: avertissement visuel non bloquant
+Écran allumé
+navigator.wakeLock.request('screen')
+en mode caisse
+Multi-panier
+Possibilité de mettre un panier en attente (client qui va chercher de l'argent) et d'en ouvrir un autre
+7.3 Parcours d'encaissement (implémentation du flux du cahier des charges)
+[1] Recherche produit ......... MiniSearch local, < 100 ms
+[2] Affichage infos + photo ... depuis Dexie + Cache Storage
+[3] Ajout au panier ........... Zustand, vibration de confirmation
+[4] Validation du panier ...... calcul total, remise, contrôles
+[5] Encaissement .............. saisie montant reçu, mode de paiement
+[6] Calcul monnaie ............ automatique, entiers XOF
+[7] Génération facture ........ pdf-lib côté client, offline
+[8] Impression ................ ESC/POS Bluetooth/USB ou window.print()
+[9] Enregistrement ............ Dexie + outbox → stats
+Temps cible du parcours complet pour 3 articles :
+moins de 25 secondes
+.
+7.4 Impression - le sujet à ne pas sous-estimer
+Scénario
+Solution technique
+Fiabilité
+Imprimante thermique Bluetooth 58/80 mm (Android/PC)
+Web Bluetooth
++ commandes ESC/POS brutes
+Bonne, mais nécessite Chrome/Edge
+Imprimante thermique USB (PC caisse)
+WebUSB
++ ESC/POS
+Bonne sur Chromium desktop
+Imprimante réseau / Wi-Fi
+Petit
+agent local Node.js
+(
+node-thermal-printer
+) ou impression via IP:9100
+Excellente, mais un binaire à installer
+Imprimante A4 classique
+window.print()
++ CSS
+@media print
+sur le PDF
+Universelle
+iOS / Safari
+❌ Pas de Web Bluetooth/USB. → PDF partagé via AirPrint ou app imprimante du fabricant
+Contournement
+Recommandation :
+viser en priorité les
+imprimantes thermiques Bluetooth 80 mm
+avec un poste de caisse
+Android ou Windows sous Chrome
+. C'est le combo le moins cher et le plus fiable au Bénin. iOS reste utilisable pour la consultation et le tableau de bord, pas comme poste de caisse principal. À écrire noir sur blanc dans les prérequis matériels.
+Format ticket à prévoir :
+80 mm (48 caractères) et 58 mm (32 caractères), logo en bitmap monochrome, QR code de vérification de facture.
+8. BACKEND - COMPARAISON ET DÉCISION
+8.1 Option A : Supabase (recommandée)
+Aspect
+Détail
+Base
+PostgreSQL 16 managé, extensions activables
+API
+REST auto-générée (PostgREST) + client TS typé généré depuis le schéma
+Auth
+Email/mot de passe, magic link, OAuth, MFA. JWT dans les headers
+Autorisation
+Row Level Security
+au niveau base = sécurité inviolable même si le front est compromis
+Storage
+Compatible S3, transformations d'images à la volée, CDN
+Realtime
+WebSocket sur les changements de table (alertes stock, sync multi-poste)
+Logique serveur
+Edge Functions (Deno) + fonctions PL/pgSQL + triggers
+Cron
+pg_cron
+pour les rapports quotidiens, rafraîchissement des vues matérialisées
+Coût
+Gratuit → 25 $/mois (Pro) puis à l'usage
+Auto-hébergement
+✅ Possible (Docker Compose) si le client exige la souveraineté des données
+Gain estimé : 4 à 6 semaines de développement.
+Sur un budget serré, c'est décisif.
+8.2 Organisation du backend Supabase
+Aspect
+Détail
+Framework
+NestJS 10 + TypeScript, architecture modulaire
+ORM
+Prisma
+(DX excellente) ou
+Drizzle
+(plus proche du SQL)
+Auth
+Passport JWT + refresh tokens + RBAC via guards/decorators
+API
+REST + OpenAPI/Swagger auto-généré
+Files d'attente
+BullMQ + Redis (import Excel, génération de rapports, envoi d'e-mails)
+Storage
+MinIO auto-hébergé ou AWS S3 / Cloudflare R2
+Conteneurisation
+Docker + Docker Compose, déploiement VPS
+Quand choisir cette option ?
+Si le client exige la propriété totale du code back-end (cf. ton autre cahier des charges qui l'impose explicitement), ou si la logique métier devient très complexe (multi-entrepôts, comptabilité, workflows d'approbation).
+8.3 Règles d'implémentation Supabase
+Démarre en Supabase, avec une discipline d'architecture qui rend la migration triviale :
+Toute la logique métier en PostgreSQL
+(fonctions PL/pgSQL, triggers, vues). Elle est portable partout.
+Aucun appel
+supabase.from(...)
+dans les composants React.
+Tout passe par une couche
+lib/repositories/*.ts
+. Le jour où tu changes de back-end, tu réécris cette couche uniquement.
+Migrations SQL versionnées
+dans le repo (
+supabase/migrations/*.sql
+), jamais de modification via l'interface web.
+Types générés
+depuis le schéma (
+supabase gen types typescript
+), commités.
+Résultat : le code source complet reste à toi, la base est du PostgreSQL standard, et tu peux passer sur un VPS en une semaine si nécessaire.
+9. BASE DE DONNÉES - SCHÉMA COMPLET
+9.1 Extensions PostgreSQL requises
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";     -- uuid, hash
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";      -- recherche floue serveur
+CREATE EXTENSION IF NOT EXISTS "unaccent";     -- recherche sans accents
+CREATE EXTENSION IF NOT EXISTS "ltree";        -- hiérarchie de catégories
+CREATE EXTENSION IF NOT EXISTS "pg_cron";      -- tâches planifiées
+CREATE EXTENSION IF NOT EXISTS "vector";       -- phase 5 : IA
+9.2 Hiérarchie des produits (exigence explicite du cahier des charges)
+Le cahier des charges impose :
+Fer
+→
+Fer à béton 6mm
+,
+8mm
+,
+10mm
+/
+Peinture
+→
+blanche 1L
+,
+5L
+,
+20L
+/
+Ciment
+→
+50kg
+,
+haute résistance
+,
+blanc
+.
+Modèle retenu : catégories arborescentes (
+ltree
+) + produits avec variantes.
+-- Catégories arborescentes illimitées
+CREATE TABLE categories (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  parent_id     uuid REFERENCES categories(id) ON DELETE RESTRICT,
+  code          text NOT NULL UNIQUE,        -- "FER", "FER-BET", "PEINT"
+  nom           text NOT NULL,
+  chemin        ltree NOT NULL,              -- FER.FER_BET
+  niveau        smallint NOT NULL,
+  prefixe_ref   text,                        -- préfixe pour la génération des références
+  compteur_ref  integer NOT NULL DEFAULT 0,  -- séquence par catégorie
+  image_url     text,
+  ordre         integer DEFAULT 0,
+  actif         boolean NOT NULL DEFAULT true,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_categories_chemin ON categories USING gist (chemin);
+CREATE INDEX idx_categories_parent ON categories(parent_id);
+
+-- Produits
+CREATE TABLE produits (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  reference         text NOT NULL UNIQUE,          -- généré : FER-BET-0006
+  categorie_id      uuid NOT NULL REFERENCES categories(id),
+  produit_parent_id uuid REFERENCES produits(id),  -- variantes (facultatif)
+  nom               text NOT NULL,
+  description       text,
+  code_barre        text UNIQUE,
+  unite             text NOT NULL DEFAULT 'pièce', -- pièce, kg, sac, litre, mètre, botte
+  attributs         jsonb DEFAULT '{}',            -- {"diametre":"6mm","volume":"1L","couleur":"blanc"}
+  prix_achat        integer,                       -- FCFA entier
+  prix_vente        integer NOT NULL,              -- FCFA entier
+  prix_vente_min    integer,                       -- plancher de négociation
+  tva_taux          numeric(5,2) DEFAULT 18.00,    -- Bénin : 18%
+  stock_cache       numeric(14,3),                 -- recalculé par trigger, NULL = non suivi
+  seuil_alerte      numeric(14,3),
+  emplacement       text,                          -- "Rayon A3", "Dépôt 2"
+  image_url         text,
+  image_thumb_url   text,
+  images_extra      jsonb DEFAULT '[]',
+  mots_cles         text,                          -- synonymes pour la recherche
+  recherche         tsvector GENERATED ALWAYS AS (
+                      to_tsvector('french', unaccent(coalesce(nom,'') || ' ' || coalesce(reference,'') || ' ' || coalesce(mots_cles,'')))
+                    ) STORED,
+  actif             boolean NOT NULL DEFAULT true,
+  created_by        uuid REFERENCES utilisateurs(id),
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  version           integer NOT NULL DEFAULT 1
+);
+CREATE INDEX idx_produits_recherche ON produits USING gin (recherche);
+CREATE INDEX idx_produits_nom_trgm ON produits USING gin (nom gin_trgm_ops);
+CREATE INDEX idx_produits_categorie ON produits(categorie_id) WHERE actif;
+CREATE INDEX idx_produits_updated ON produits(updated_at);
+CREATE INDEX idx_produits_code_barre ON produits(code_barre) WHERE code_barre IS NOT NULL;
+Génération automatique des références par catégorie
+(exigence "Référencement - Génération d'une référence par catégorie") :
+CREATE OR REPLACE FUNCTION generer_reference() RETURNS trigger AS $$
+DECLARE p text; n integer;
+BEGIN
+  IF NEW.reference IS NULL OR NEW.reference = '' THEN
+    SELECT coalesce(prefixe_ref, code) INTO p FROM categories WHERE id = NEW.categorie_id;
+    UPDATE categories SET compteur_ref = compteur_ref + 1 WHERE id = NEW.categorie_id RETURNING compteur_ref INTO n;
+    NEW.reference := p || '-' || lpad(n::text, 4, '0');
+  END IF;
+  RETURN NEW;
+END $$ LANGUAGE plpgsql;
+CREATE TRIGGER trg_generer_reference BEFORE INSERT ON produits FOR EACH ROW EXECUTE FUNCTION generer_reference();
+9.3 Ventes et facturation
+CREATE TABLE ventes (
+  id                uuid PRIMARY KEY,               -- fourni par le CLIENT (idempotence)
+  numero_local      text NOT NULL,                  -- C1-20260729-0042
+  numero_facture    text UNIQUE,                    -- séquence globale serveur
+  poste_id          uuid NOT NULL REFERENCES postes(id),
+  caissier_id       uuid NOT NULL REFERENCES utilisateurs(id),
+  session_caisse_id uuid REFERENCES sessions_caisse(id),
+  client_id         uuid REFERENCES clients(id),
+  client_nom        text,
+  client_telephone  text,
+  sous_total        integer NOT NULL,
+  remise_montant    integer NOT NULL DEFAULT 0,
+  remise_motif      text,
+  tva_montant       integer NOT NULL DEFAULT 0,
+  total             integer NOT NULL,
+  montant_recu      integer NOT NULL,
+  monnaie_rendue    integer NOT NULL,
+  mode_paiement     text NOT NULL CHECK (mode_paiement IN ('especes','mobile_money','virement','cheque','credit','mixte')),
+  paiements         jsonb DEFAULT '[]',             -- paiement mixte
+  statut            text NOT NULL DEFAULT 'validee' CHECK (statut IN ('validee','annulee','avoir')),
+  vente_annulee_id  uuid REFERENCES ventes(id),     -- pour les avoirs
+  cree_le_client    timestamptz NOT NULL,           -- horodatage réel de la vente
+  synced_at         timestamptz NOT NULL DEFAULT now(),
+  cout_total        integer,                        -- somme des PMP pour la marge
+  marge             integer GENERATED ALWAYS AS (total - coalesce(cout_total,0)) STORED,
+  meta              jsonb DEFAULT '{}'
+);
+CREATE INDEX idx_ventes_date ON ventes(cree_le_client DESC);
+CREATE INDEX idx_ventes_caissier ON ventes(caissier_id, cree_le_client DESC);
+CREATE UNIQUE INDEX idx_ventes_numero_local ON ventes(poste_id, numero_local);
+
+CREATE TABLE lignes_vente (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  vente_id       uuid NOT NULL REFERENCES ventes(id) ON DELETE CASCADE,
+  produit_id     uuid NOT NULL REFERENCES produits(id),
+  -- Snapshot au moment de la vente : le prix d'hier ne doit jamais changer
+  produit_nom    text NOT NULL,
+  produit_ref    text NOT NULL,
+  quantite       numeric(14,3) NOT NULL CHECK (quantite > 0),
+  unite          text NOT NULL,
+  prix_unitaire  integer NOT NULL,
+  cout_unitaire  integer,
+  remise_ligne   integer NOT NULL DEFAULT 0,
+  total_ligne    integer NOT NULL,
+  ordre          smallint NOT NULL DEFAULT 0
+);
+Le snapshot des libellés et prix dans
+lignes_vente
+est non négociable.
+Si le gérant renomme un produit ou change son prix demain, les factures d'hier doivent rester identiques. C'est une exigence comptable, pas un détail.
+9.4 Stocks - modèle par mouvements
+CREATE TABLE mouvements_stock (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  produit_id    uuid NOT NULL REFERENCES produits(id),
+  type          text NOT NULL CHECK (type IN ('entree','sortie_vente','sortie_perte','sortie_retour_fournisseur','ajustement_inventaire','transfert','retour_client')),
+  quantite      numeric(14,3) NOT NULL,      -- signé : + entrée, - sortie
+  cout_unitaire integer,                     -- pour le calcul du PMP
+  reference_doc text,                        -- n° facture, n° bon de livraison
+  vente_id      uuid REFERENCES ventes(id),
+  fournisseur_id uuid REFERENCES fournisseurs(id),
+  motif         text,
+  utilisateur_id uuid NOT NULL REFERENCES utilisateurs(id),
+  cree_le       timestamptz NOT NULL DEFAULT now(),
+  cree_le_client timestamptz
+);
+CREATE INDEX idx_mouvements_produit_date ON mouvements_stock(produit_id, cree_le DESC);
+
+-- Le stock est TOUJOURS un SUM, jamais une valeur écrasée
+CREATE OR REPLACE FUNCTION recalculer_stock_cache() RETURNS trigger AS $$
+BEGIN
+  UPDATE produits p
+     SET stock_cache = (SELECT sum(quantite) FROM mouvements_stock WHERE produit_id = p.id),
+         updated_at = now()
+   WHERE p.id = coalesce(NEW.produit_id, OLD.produit_id);
+  RETURN NULL;
+END $$ LANGUAGE plpgsql;
+CREATE TRIGGER trg_stock_cache AFTER INSERT OR UPDATE OR DELETE ON mouvements_stock
+  FOR EACH ROW EXECUTE FUNCTION recalculer_stock_cache();
+Calcul du coût : PMP (Prix Moyen Pondéré)
+, recalculé à chaque entrée. C'est la méthode la plus adaptée à la quincaillerie (produits fongibles, prix d'achat variables). FIFO est possible mais alourdit inutilement.
+9.5 Autres tables
+utilisateurs      (id, auth_id, nom, telephone, email, role, pin_hash, actif, dernier_acces)
+roles_permissions (role, permission)                  -- RBAC en base
+postes            (id, code, libelle, prefixe_facture, actif)
+sessions_caisse   (id, poste_id, caissier_id, ouverte_le, fermee_le, fond_initial, total_theorique, total_compte, ecart)
+clients           (id, nom, telephone, adresse, type, plafond_credit, solde)
+fournisseurs      (id, nom, telephone, adresse, conditions_paiement)
+receptions        (id, fournisseur_id, numero_bl, date, total, statut)
+inventaires       (id, date, statut, utilisateur_id, notes)
+lignes_inventaire (id, inventaire_id, produit_id, qte_theorique, qte_comptee, ecart)
+synonymes         (id, terme, produit_id | categorie_id)
+audit_log         (id, table_cible, enregistrement_id, action, avant jsonb, apres jsonb, utilisateur_id, ip, user_agent, cree_le)
+parametres        (cle, valeur jsonb)                 -- config entreprise, TVA, arrondi, logo
+imports           (id, fichier, statut, lignes_total, lignes_ok, lignes_erreur, rapport jsonb, utilisateur_id)
+objectifs         (id, type, periode, cible, realise)  -- phase 5, gestion par objectifs
+9.6 Vues matérialisées pour le tableau de bord
+Requêter 100 000 lignes de vente à chaque affichage du dashboard = suicide en performance. Solution :
+agrégats pré-calculés
+.
+CREATE MATERIALIZED VIEW mv_ventes_jour AS
+SELECT date_trunc('day', cree_le_client AT TIME ZONE 'Africa/Porto-Novo')::date AS jour,
+       count(*) AS nb_ventes,
+       sum(total) AS ca,
+       sum(marge) AS marge,
+       sum(total) / nullif(count(*),0) AS panier_moyen
+FROM ventes WHERE statut = 'validee'
+GROUP BY 1;
+CREATE UNIQUE INDEX ON mv_ventes_jour(jour);
+
+CREATE MATERIALIZED VIEW mv_top_produits AS
+SELECT lv.produit_id, p.nom, p.reference, c.nom AS categorie,
+       date_trunc('month', v.cree_le_client)::date AS mois,
+       sum(lv.quantite) AS qte_vendue,
+       sum(lv.total_ligne) AS ca,
+       sum(lv.total_ligne - (lv.cout_unitaire * lv.quantite)) AS marge
+FROM lignes_vente lv
+JOIN ventes v ON v.id = lv.vente_id AND v.statut = 'validee'
+JOIN produits p ON p.id = lv.produit_id
+JOIN categories c ON c.id = p.categorie_id
+GROUP BY 1,2,3,4,5;
+
+-- Rafraîchissement toutes les 15 minutes via pg_cron
+SELECT cron.schedule('refresh_kpi', '*/15 * * * *', $$
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_ventes_jour;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY mv_top_produits;
+$$);
+9.7 Row Level Security (extrait)
+ALTER TABLE ventes ENABLE ROW LEVEL SECURITY;
+
+-- Un caissier ne voit que ses propres ventes du jour
+CREATE POLICY caissier_ses_ventes ON ventes FOR SELECT
+  USING (
+    caissier_id = auth.uid()
+    AND cree_le_client >= current_date
+    OR a_permission(auth.uid(), 'ventes.lire_toutes')
+  );
+
+-- Personne ne peut modifier une vente validée (sauf avoir)
+CREATE POLICY ventes_immuables ON ventes FOR UPDATE
+  USING (a_permission(auth.uid(), 'ventes.annuler'));
+
+-- Le prix d'achat est masqué aux caissiers → via une vue dédiée
+CREATE VIEW produits_caisse AS
+  SELECT id, reference, nom, categorie_id, unite, prix_vente, stock_cache, image_thumb_url, actif
+  FROM produits WHERE actif;
+10. GESTION DES IMAGES PRODUITS
+Exigence explicite :
+"Associer une image à chaque produit, et dans la recherche de produits dans la partie caisse"
+. Avec 1000 produits, c'est un enjeu de performance majeur.
+10.1 Pipeline complet
+Photo prise au téléphone (3-5 Mo, 4000×3000)
+   ↓ browser-image-compression (côté client, Web Worker)
+   ↓ redimensionnement + conversion WebP qualité 80
+Image web (1200×1200, ~120 Ko)
+   ↓ upload Supabase Storage (bucket `produits`)
+   ↓ génération de 3 variantes via transformation à la volée
+   ├── thumb   : 96×96   (~4 Ko)  → recherche caisse, listes
+   ├── card    : 400×400 (~25 Ko) → grille produits
+   └── full    : 1200×1200        → fiche produit, zoom
+   ↓ Service Worker : CacheFirst, 2000 entrées max
+Disponible offline instantanément
+10.2 Règles techniques
+Règle
+Valeur
+Format de sortie
+WebP
+(AVIF en option, moins bien supporté sur vieux Android)
+Taille max avant upload
+300 Ko (compression client obligatoire)
+Dimensions max
+1200×1200
+Vignette caisse
+96×96, chargée en priorité,
+preload des 50 produits les plus vendus
+Placeholder
+blurhash
+ou couleur dominante, pour éviter le layout shift
+Chargement
+loading="lazy"
+sauf les 12 premiers résultats
+Image manquante
+Icône générique
+par catégorie
+(un sac pour ciment, une barre pour fer) : bien plus utile qu'un carré gris
+Budget offline total
+~1000 vignettes × 4 Ko = 4 Mo (négligeable) + 1000 cards × 25 Ko = 25 Mo (acceptable)
+Purge
+LRU si
+navigator.storage.estimate()
+dépasse 80% du quota
+Import en masse
+Upload d'un ZIP de photos nommées par référence produit (
+FER-BET-0006.jpg
+) → association automatique
+11. FACTURATION & CONFORMITÉ
+11.1 Génération PDF côté client (offline)
+pdf-lib
+est le choix imposé par la contrainte offline : pas de serveur, pas de Puppeteer, ~150 Ko de bundle, fonctionne dans un Web Worker.
+Éléments de la facture :
+En-tête : logo, raison sociale, IFU, RCCM, adresse, téléphone, e-mail
+Numéro de facture (local + global), date et heure
+Client (nom, téléphone, ou "Client comptant")
+Tableau des lignes : référence, désignation, quantité, unité, PU, total
+Sous-total, remise, TVA 18% (si assujetti), total TTC
+Total en lettres
+(obligation courante en zone UEMOA)
+Montant reçu, monnaie rendue, mode de paiement
+Caissier, poste
+QR code de vérification (URL de contrôle de la facture)
+Mentions légales et conditions
+11.2 Conformité fiscale Bénin - point de vigilance CRITIQUE
+⚠️
+À valider impérativement avec le client et la DGI avant la mise en production.
+Le Bénin impose aux entreprises assujetties l'usage de la
+facture normalisée
+via le dispositif
+e-MECeF / MECeF
+(Module Électronique de Contrôle et de Facturation) de la DGI. Concrètement, cela implique :
+Transmission de chaque facture à l'API e-MECeF de la DGI
+Récupération d'un
+code MECeF / QR code officiel
+à imprimer sur la facture
+Conservation des identifiants de l'assujetti (IFU, token API)
+Impact technique sur l'architecture :
+Une table
+factures_normalisees
+(facture_id, code_mecef, qr_code, statut, payload_envoye, reponse, tentatives)
+Une
+file d'attente de normalisation
+distincte de la file de sync (le mode offline empêche la normalisation immédiate)
+Un statut de facture :
+locale
+→
+normalisee
+→
+erreur_normalisation
+Un mode dégradé documenté et validé par le client si l'API DGI est indisponible
+Le client est assujetti à la TVA :
+l'intégration e-MECeF est obligatoire et incluse dans le chemin critique de la v1.
+11.3 Archivage
+PDF stocké en local (IndexedDB, 90 jours) pour réimpression offline
+PDF archivé sur Supabase Storage à la synchronisation (rétention 10 ans)
+Réimpression toujours possible depuis l'historique, avec mention "DUPLICATA"
+12. IMPORT / EXPORT EXCEL
+Exigence
+critique
+: importer les 1000 références de départ.
+12.1 Import
+Étape
+Technique
+Fichier
+.xlsx
+/
+.csv
+, glisser-déposer, max 10 Mo
+Parsing
+SheetJS
+dans un
+Web Worker
+(sinon l'UI gèle sur 1000 lignes)
+Modèle téléchargeable
+Fichier
+.xlsx
+généré avec les colonnes attendues, une feuille d'exemples et une feuille de nomenclature des catégories
+Mapping des colonnes
+Interface de correspondance colonne fichier ↔ champ SECS, mémorisée pour les imports suivants
+Validation
+Zod
+ligne par ligne : types, prix entiers positifs, catégorie existante, référence unique, unité dans la liste autorisée
+Hiérarchie
+Colonnes
+Categorie
+/
+Sous-categorie
+→ création automatique des catégories manquantes (avec confirmation)
+Dry-run obligatoire
+Aperçu :
+"842 lignes valides, 158 en erreur"
++ tableau des erreurs exportable,
+avant
+toute écriture
+Écriture
+Par lots de 100 via Edge Function, transaction par lot, barre de progression
+Idempotence
+Clé de déduplication sur
+reference
+:
+INSERT ... ON CONFLICT (reference) DO UPDATE
+Rapport
+Enregistré en base (table
+imports
+), téléchargeable, annulable dans les 24h
+Colonnes du modèle d'import :
+Categorie | Sous-categorie | Reference | Nom | Description | Unite |
+Prix_achat | Prix_vente | Stock_initial | Seuil_alerte | Code_barre |
+Emplacement | Mots_cles | Attributs (JSON)
+12.2 Export
+Export
+Contenu
+Catalogue produits
+Toutes les colonnes + stock actuel + valorisation
+Ventes
+Période paramétrable, une ligne par ligne de vente, filtres
+Statistiques
+CA par jour/produit/catégorie/caissier, marges
+Mouvements de stock
+Journal complet
+Inventaire
+Feuille de comptage pré-remplie à imprimer
+Génération côté client si < 5000 lignes, sinon Edge Function + lien de téléchargement.
+13. TABLEAU DE BORD & KPI
+13.1 Indicateurs (issus du cahier des charges)
+Bloc
+Indicateurs
+Chiffre d'affaires
+CA du jour, de la semaine, du mois, de l'année + comparaison N-1 + évolution %
+Ventes
+Nombre de tickets, panier moyen, CA par heure (identifier les heures de pointe)
+Produits performants
+Top 20 en quantité, Top 20 en CA, Top 20 en marge, produits dormants (0 vente sur 60 j)
+Marges
+Marge brute globale, taux de marge, marge par produit et par catégorie
+Stocks
+Valorisation du stock (PMP), ruptures, stock faible, rotation, couverture en jours
+Catégories
+Répartition du CA par famille, avec drill-down dans l'arborescence
+ltree
+Caissiers
+CA par caissier, nombre de tickets, écarts de caisse, remises accordées
+Trésorerie
+Répartition par mode de paiement, encours clients
+13.2 Implémentation
+Données depuis les
+vues matérialisées
+(§9.6), jamais de calcul à la volée sur les tables brutes
+Cache TanStack Query :
+staleTime
+5 min,
+gcTime
+30 min
+Graphiques
+Recharts
+: courbe CA, barres top produits, donut catégories, sparklines dans les cartes KPI
+Sélecteur de période global (jour / semaine / mois / année / personnalisé) propagé à tous les widgets
+Drill-down
+: cliquer sur une catégorie du donut filtre tout le dashboard
+Version offline dégradée : afficher les KPI du dernier snapshot synchronisé, avec la mention "Données au 29/07 14:32"
+Widgets réorganisables par l'utilisateur (
+dnd-kit
+), disposition sauvegardée
+14. RAPPORTS
+Rapport
+Périodicité
+Format
+Génération
+Journal des ventes
+Quotidien
+PDF + Excel
+Client ou Edge Function
+Rapport Z de caisse (clôture)
+À chaque fermeture de session
+PDF + ticket 80 mm
+Client (offline)
+Rapport financier mensuel
+Mensuel
+PDF
+Edge Function +
+pg_cron
+Rapport annuel
+Annuel
+PDF
+Edge Function
+Valorisation du stock
+À la demande
+Excel
+Edge Function
+Écarts d'inventaire
+Après inventaire
+PDF + Excel
+Client
+Marges par produit
+À la demande
+Excel
+Edge Function
+Produits en rupture
+Quotidien
+PDF + notification push
+pg_cron
+Rapport Z (clôture de caisse)
+: indispensable et souvent oublié. Fond de caisse initial, total des ventes par mode de paiement, total théorique en espèces, total compté par le caissier,
+écart
+, nombre de tickets, remises accordées, annulations. Signé électroniquement par le caissier (PIN).
+15. AUTHENTIFICATION, RÔLES & TRAÇABILITÉ
+Objectif 5 du cahier des charges :
+"Identifier précisément l'utilisateur ayant réalisé chaque action."
+15.1 Double niveau d'authentification
+Enrôlement de l'appareil
+(une seule fois) : le gérant connecte l'appareil avec e-mail + mot de passe. Un
+poste_id
+et un refresh token long (30 jours) sont stockés localement.
+Session caissier
+(chaque prise de poste) : le caissier saisit un
+PIN à 4-6 chiffres
+. Rapide, adapté au comptoir, et ça évite de taper un mot de passe complexe 20 fois par jour.
+PIN haché en
+Argon2id
+côté serveur, vérifiable offline via un hash mis en cache localement
+Verrouillage après 5 tentatives
+Auto-verrouillage après 5 minutes d'inactivité (paramétrable)
+15.2 Matrice des rôles
+Permission
+Caissier
+Magasinier
+Superviseur
+Gérant
+Admin
+Encaisser une vente
+✅
+❌
+✅
+✅
+✅
+Voir ses ventes du jour
+✅
+❌
+✅
+✅
+✅
+Voir toutes les ventes
+❌
+❌
+✅
+✅
+✅
+Annuler une vente
+❌
+❌
+✅
+✅
+✅
+Accorder une remise
+Plafonnée
+❌
+✅
+✅
+✅
+Modifier un prix en caisse
+❌
+❌
+✅
+✅
+✅
+Créer/modifier un produit
+❌
+✅
+✅
+✅
+✅
+Voir les prix d'achat et marges
+❌
+✅
+✅
+✅
+✅
+Saisir une entrée de stock
+❌
+✅
+✅
+✅
+✅
+Ajustement d'inventaire
+❌
+❌
+✅
+✅
+✅
+Import Excel
+❌
+❌
+❌
+✅
+✅
+Tableau de bord complet
+❌
+Partiel
+✅
+✅
+✅
+Rapports financiers
+❌
+❌
+✅
+✅
+✅
+Gérer les utilisateurs
+❌
+❌
+❌
+✅
+✅
+Paramètres système
+❌
+❌
+❌
+❌
+✅
+Consulter l'audit log
+❌
+❌
+❌
+✅
+✅
+Permissions stockées en base (
+roles_permissions
+), pas codées en dur. Le gérant peut créer des rôles personnalisés.
+15.3 Audit log
+Table
+audit_log
+alimentée par
+triggers PostgreSQL
+(pas par le code applicatif : impossible à contourner) sur :
+produits
+,
+ventes
+,
+mouvements_stock
+,
+utilisateurs
+,
+parametres
+.
+Contenu : table, id, action, état avant (
+jsonb
+), état après (
+jsonb
+), utilisateur, IP, user agent, horodatage.
+Aucun DELETE autorisé
+sur cette table (révoquer le droit y compris pour le rôle applicatif).
+Actions sensibles également journalisées côté applicatif : connexion/déconnexion, échecs de PIN, exports de données, impressions de duplicata, annulations.
+16. MODULE IA (PHASE 5)
+Le cahier des charges est clair :
+"L'IA est un module d'amélioration et non un prérequis."
+On la prépare, on ne la construit pas maintenant.
+16.1 Ce qu'il faut faire dès la phase 1 pour ne pas se bloquer
+Horodater tout
+avec précision (
+cree_le_client
++
+synced_at
+)
+Ne jamais supprimer de données
+: soft delete uniquement (
+actif
+,
+deleted_at
+)
+Normaliser les libellés
+produits et catégories (l'IA a besoin de données propres)
+Enregistrer le contexte
+: météo n'est pas utile, mais jour de la semaine, période de l'année, chantiers en cours (champ libre sur les grosses ventes) le sont
+Activer
+pgvector
+dès le départ, même sans l'utiliser
+16.2 Les 4 fonctionnalités IA prévues et leur implémentation
+Fonctionnalité
+Technique
+Coût
+Résumé hebdomadaire
+pg_cron
+→ Edge Function → agrégats SQL → prompt structuré →
+GPT-4o-mini
+ou
+Claude Haiku
+→ texte stocké + notification push
+~0,01 $/semaine. Négligeable
+Détection d'anomalies
+Pas besoin de LLM.
+SQL + statistiques : écart-type sur le CA, z-score sur les quantités vendues, ventes hors horaires, remises anormales, écarts de caisse répétés, marge négative. Un LLM n'intervient que pour
+rédiger
+l'alerte
+Quasi nul
+Recommandations commerciales
+Analyse de panier (règles d'association, algorithme Apriori simplifié en SQL) → "les clients qui achètent du ciment achètent du fer à béton dans 68% des cas" + prévision de réapprovisionnement (moyenne mobile + tendance)
+Nul
+Gestion par objectifs
+Table
+objectifs
++ calcul d'avancement + projection linéaire + alerte si dérive
+Nul
+Assistant conversationnel métier
+(bonus)
+RAG : embeddings des produits + historique dans
+pgvector
+, recherche sémantique, LLM pour répondre en français à
+"combien j'ai vendu de fer à béton 8 le mois dernier ?"
+~5-15 $/mois
+Point important à assumer :
+80% de la valeur "IA" annoncée dans le cahier des charges s'obtient avec du
+SQL et des statistiques
+, pas avec un LLM. Le LLM sert surtout à
+formuler
+les analyses en langage naturel. C'est moins vendeur, mais c'est plus fiable, gratuit et ça fonctionne offline. Ne pas construire une dépendance à une API externe pour des calculs que Postgres fait mieux.
+17. INFRASTRUCTURE, DÉPLOIEMENT & DEVOPS
+17.1 Option recommandée : Vercel + Supabase
+Service
+Rôle
+Coût
+Vercel
+(Hobby → Pro)
+Hébergement Next.js, CDN mondial, HTTPS auto, preview deployments
+0 → 20 $/mois
+Supabase
+(Free → Pro)
+Postgres, Auth, Storage, Realtime, Edge Functions
+0 → 25 $/mois
+Cloudflare
+DNS, protection DDoS, cache
+Gratuit
+Sentry
+Suivi des erreurs front et back
+0 → 26 $/mois
+Resend
+ou
+Brevo
+E-mails transactionnels
+0 → 20 $/mois
+Nom de domaine
+.bj
+Identité locale
+~15-30 000 FCFA/an
+Total réaliste au démarrage : 0 FCFA/mois
+(tiers gratuits suffisants pour une quincaillerie).
+En production sérieuse : ~30 000 à 45 000 FCFA/mois.
+17.2 Hébergement et exploitation Vercel + Supabase Cloud
+Si le client exige la souveraineté des données ou veut éviter tout abonnement en devises :
+# docker-compose.yml (simplifié)
+services:
+  traefik:    # reverse proxy + Let's Encrypt automatique
+  app:        # Next.js en standalone
+  postgres:   # PostgreSQL 16 + extensions
+  minio:      # stockage S3-compatible pour les images
+  redis:      # cache + files d'attente
+  backup:     # pg_dump chiffré → stockage distant, quotidien
+  umami:      # analytics auto-hébergé
+VPS recommandé :
+Hetzner CX22
+(2 vCPU, 4 Go RAM, 40 Go SSD) à ~4,5 €/mois, ou
+Contabo
+pour plus de ressources. Datacenter en Allemagne = latence ~120 ms depuis Cotonou, parfaitement acceptable pour une app offline-first.
+⚠️ Coût caché de cette option :
+tu deviens l'administrateur système
+. Mises à jour de sécurité, sauvegardes, restaurations, monitoring. Compte 4 à 8 heures par mois. Chiffre-le dans le contrat de maintenance.
+17.3 CI/CD
+# .github/workflows/ci.yml
+on: [push, pull_request]
+jobs:
+  qualite:
+    - pnpm install --frozen-lockfile
+    - pnpm typecheck          # tsc --noEmit
+    - pnpm lint               # ESLint + Prettier
+    - pnpm test               # Vitest (unitaires)
+    - pnpm test:e2e           # Playwright sur les parcours critiques
+    - pnpm build              # vérifie le build de prod
+    - pnpm lighthouse:ci      # budget de perf + score PWA >= 100
+  migrations:
+    - supabase db push --dry-run   # vérifie les migrations SQL
+Environnements :
+local
+(Supabase CLI + Docker) →
+preview
+(une base par branche) →
+staging
+→
+production
+. Jamais de test direct en production sur une app de caisse.
+17.4 Sauvegardes & continuité
+Quoi
+Fréquence
+Rétention
+Test de restauration
+Base PostgreSQL (PITR)
+Continue
+7 jours (Supabase Pro)
+Mensuel
+Dump SQL complet chiffré
+Quotidien 2h
+30 jours + 12 mensuels
+Trimestriel
+Images produits
+Hebdomadaire
+90 jours
+Semestriel
+Export Excel du catalogue
+Quotidien, envoyé par e-mail au gérant
+90 jours
+-
+Une sauvegarde jamais restaurée n'est pas une sauvegarde.
+Planifier un test de restauration réel avant la mise en production, et le documenter.
+18. SÉCURITÉ - CHECKLIST COMPLÈTE
+Domaine
+Mesure
+Transport
+HTTPS strict, HSTS
+max-age=31536000; includeSubDomains; preload
+En-têtes
+CSP stricte (nonce),
+X-Frame-Options: DENY
+,
+X-Content-Type-Options: nosniff
+,
+Referrer-Policy: strict-origin-when-cross-origin
+,
+Permissions-Policy
+Mots de passe
+Argon2id (géré par Supabase Auth), minimum 10 caractères, vérification contre les fuites connues
+PIN caissier
+Argon2id, 6 chiffres, verrouillage après 5 échecs, jamais en clair en local
+Sessions
+JWT courts (1h) + refresh token rotatif, révocation possible par appareil
+Autorisation
+RLS PostgreSQL
+(défense en profondeur : même une faille front ne donne pas accès aux données)
+Injection SQL
+Requêtes paramétrées exclusivement, jamais de SQL construit par concaténation
+XSS
+React échappe par défaut,
+dangerouslySetInnerHTML
+interdit (règle ESLint), sanitisation DOMPurify si HTML riche
+CSRF
+Server Actions Next.js protégées nativement,
+SameSite=Lax
+sur les cookies
+Upload de fichiers
+Vérification du
+magic number
+(pas juste l'extension), taille max, renommage, bucket sans exécution, scan antivirus si budget
+Rate limiting
+Upstash Ratelimit ou middleware : 5 tentatives de connexion / 15 min / IP, 100 req/min sur l'API
+Secrets
+Variables d'environnement uniquement, jamais commitées, rotation trimestrielle,
+git-secrets
+en pre-commit
+Données locales
+Chiffrement du PIN hash et des tokens en IndexedDB (Web Crypto API, clé dérivée). Les données produits n'ont pas besoin de chiffrement
+Effacement à distance
+Possibilité de révoquer un appareil → au prochain contact réseau, purge de l'IndexedDB
+Journalisation
+Audit log immuable (§15.3), alerte sur actions sensibles
+Dépendances
+pnpm audit
+en CI, Dependabot, mise à jour mensuelle
+Données personnelles
+Conformité
+Code du numérique béninois
++ APDP (Autorité de Protection des Données Personnelles). Registre des traitements, mentions d'information, procédure de suppression
+Tests d'intrusion
+Audit léger avant mise en production (OWASP ASVS niveau 1 minimum)
+19. PERFORMANCE - BUDGETS CHIFFRÉS
+Une app de caisse lente est une app abandonnée. Ces seuils sont des engagements, pas des souhaits.
+Métrique
+Cible
+Mesure
+LCP
+(chargement)
+< 2,0 s en 3G rapide
+Lighthouse CI
+INP
+(réactivité)
+< 150 ms
+Web Vitals réels
+CLS
+(stabilité)
+< 0,05
+Lighthouse CI
+TTI
+app installée (offline)
+< 1,0 s
+Manuel
+Recherche produit (1000 réf, offline)
+< 100 ms
+Test de perf
+Ajout au panier
+< 50 ms
+Test de perf
+Enregistrement d'une vente (local)
+< 200 ms
+Test de perf
+Génération PDF facture
+< 800 ms
+Test de perf
+Bundle JS initial
+< 180 Ko gzip
+@next/bundle-analyzer
+en CI
+Bundle route
+/caisse
+< 250 Ko gzip
+CI
+Score Lighthouse PWA
+100/100
+CI, bloquant
+Score Lighthouse Performance
+≥ 90 (mobile)
+CI
+Stockage local total
+< 60 Mo
+storage.estimate()
+Techniques d'optimisation à appliquer :
+Server Components par défaut,
+'use client'
+uniquement quand nécessaire
+next/dynamic
+pour les modules lourds (Recharts, SheetJS, pdf-lib chargés à la demande)
+Virtualisation de toutes les listes > 50 éléments
+next/font
+avec
+display: swap
+et sous-ensemble latin
+Images en AVIF/WebP, dimensions explicites,
+priority
+sur le LCP
+Précharger le référentiel produits pendant l'écran de connexion
+Web Worker pour tout calcul > 50 ms (import Excel, PDF, index de recherche)
+Tester
+sur un vrai téléphone Android d'entrée de gamme
+, pas sur un MacBook Pro. C'est la seule mesure qui compte.
+20. TESTS & QUALITÉ
+Niveau
+Outil
+Périmètre
+Unitaires
+Vitest
+Calculs de monnaie, PMP, marges, remises, arrondis XOF, génération de références, validation Zod
+Composants
+Vitest + Testing Library
+Panier, formulaire produit, sélecteur de catégorie
+Intégration API
+Vitest + Supabase local
+RLS, triggers, transactions, idempotence
+E2E
+Playwright
+Parcours d'encaissement complet, import Excel, clôture de caisse
+E2E offline
+Playwright +
+context.setOffline(true)
+⚠️ Le plus important : vendre offline, reconnexion, vérifier zéro doublon
+Multi-appareils
+BrowserStack
+ou appareils réels
+Android 9+, iOS 16+, Windows, macOS
+PWA
+Lighthouse CI
+Installabilité, service worker, offline
+Charge
+k6
+50 000 ventes, 5000 produits, 10 postes simultanés
+Accessibilité
+axe-core
++ navigation clavier
+WCAG 2.1 AA raisonnable
+Sauvegarde
+Procédure manuelle documentée
+Restauration complète testée
+Scénarios de test offline obligatoires
+(à écrire noir sur blanc dans le plan de recette) :
+Vendre 10 articles hors ligne, reconnecter → 10 ventes en base, aucun doublon
+Vendre hors ligne, tuer l'app en pleine vente, relancer → panier intact
+Deux postes vendent le même produit hors ligne → les deux mouvements de stock sont bien enregistrés
+Vendre hors ligne pendant 3 jours → tout remonte correctement, dans le bon ordre chronologique
+Modifier un prix côté serveur pendant qu'un poste est hors ligne → la vente hors ligne conserve l'ancien prix, le nouveau prix s'applique après sync
+Quota de stockage atteint → dégradation propre, pas de crash
+21. STRUCTURE DU DÉPÔT
+secs/
+├── app/
+│   ├── (public)/                  # landing + page d'installation PWA
+│   │   ├── page.tsx
+│   │   └── installer/page.tsx
+│   ├── (app)/                     # zone authentifiée
+│   │   ├── caisse/
+│   │   ├── produits/
+│   │   ├── stocks/
+│   │   ├── dashboard/
+│   │   ├── rapports/
+│   │   ├── clients/
+│   │   └── admin/
+│   ├── api/
+│   │   ├── ventes/route.ts
+│   │   ├── sync/route.ts
+│   │   └── referentiel/route.ts
+│   ├── offline/page.tsx
+│   ├── manifest.ts
+│   ├── sw.ts
+│   └── layout.tsx
+├── components/
+│   ├── ui/                        # shadcn/ui
+│   ├── caisse/                    # RecherchePro duit, Panier, Encaissement, Monnaie
+│   ├── produits/
+│   ├── dashboard/
+│   └── pwa/                       # InstallSECS, IndicateurSync, PromptMiseAJour
+├── lib/
+│   ├── db/                        # Dexie : schéma, migrations, requêtes
+│   ├── sync/                      # outbox, workers, résolution de conflits
+│   ├── repositories/              # SEULE couche qui parle au back-end
+│   ├── pdf/                       # facture, rapport Z, escpos
+│   ├── excel/                     # import, export, worker
+│   ├── recherche/                 # index MiniSearch, normalisation, synonymes
+│   ├── money/                     # arithmétique XOF, montant en lettres
+│   ├── auth/                      # PIN, rôles, permissions
+│   └── schemas/                   # Zod partagés
+├── supabase/
+│   ├── migrations/                # SQL versionné
+│   ├── functions/                 # Edge Functions
+│   └── seed.sql                   # catégories quincaillerie de démarrage
+├── public/
+│   ├── icons/  screenshots/  splash/
+│   └── modeles/modele-import-produits.xlsx
+├── e2e/                           # Playwright
+├── docs/
+│   ├── architecture.md  api.md  exploitation.md  guide-utilisateur.md
+└── scripts/                       # génération d'assets, seed, migration
+22. ROADMAP TECHNIQUE (alignée sur les 5 phases du cahier des charges)
+Nom officiel du logiciel : Obasa.
+Toutes les interfaces, factures, icônes, notifications, exports et documents utilisateurs doivent afficher « Obasa ». Le terme SECS désigne uniquement le cahier des charges historique et ne doit plus apparaître dans l'expérience utilisateur.
+22.0 Paramètres métier désormais validés
+Les décisions suivantes sont figées pour la v1 :
+TVA et e-MECeF : obligatoires.
+L'intégration de normalisation fiscale est incluse dans le chemin critique de la facturation, avec gestion des files d'attente offline, des retries, des erreurs et du mode dégradé validé par la DGI.
+Multi-sites et multi-postes : obligatoires.
+Chaque donnée métier sensible porte
+site_id
+. Chaque poste reçoit un préfixe de facture unique, par exemple
+CTN-C1
+,
+CTN-C2
+ou
+ABO-C1
+, afin d'éviter toute collision entre points de vente.
+Multi-utilisateurs simultanés en caisse : obligatoire.
+Les ventes sont append-only, idempotentes et synchronisées par mouvements. Les droits et sessions de caisse sont isolés par utilisateur, poste et site.
+Vente à crédit : exclue de la v1.
+Aucun compte client, encours ou paiement différé ne doit être implémenté dans le premier périmètre.
+Unités complexes : exclues de la v1.
+La v1 utilise des unités simples et non convertibles : pièce, sac, kg, litre, mètre, botte.
+Mobile Money : exclu de la v1.
+Les moyens initiaux sont espèces, virement et chèque si retenu par le client.
+Hébergement : Supabase Cloud.
+Les migrations SQL restent versionnées dans le dépôt et la propriété du code d'intégration reste au client.
+Langue : français uniquement.
+Préparer les libellés dans des fichiers de traduction, sans ajouter d'interface multilingue en v1.
+Devis et bons de commande : hors v1.
+Réserver les identifiants et les relations nécessaires pour une phase ultérieure, sans les développer maintenant.
+22.0.1 Règle e-MECeF avant toute mise en production
+La mise en production est bloquée tant que le parcours suivant n'est pas validé avec les identifiants et règles applicables au contribuable :
+Créer une facture locale offline avec un numéro unique par site et poste.
+Synchroniser la vente dès le retour du réseau sans créer de doublon.
+Transmettre la facture à e-MECeF avec journalisation du payload et de la réponse.
+Enregistrer le code, le QR code et le statut de normalisation retournés.
+Réimprimer ou télécharger la facture normalisée.
+Rejouer automatiquement les erreurs temporaires avec backoff.
+Mettre en file les erreurs définitives pour traitement par le gérant.
+Produire un rapport de rapprochement entre ventes locales, ventes synchronisées et factures normalisées.
+Le fonctionnement offline ne doit jamais falsifier le statut fiscal : une facture locale non encore normalisée doit être clairement marquée
+« en attente de normalisation e-MECeF »
+jusqu'à confirmation du serveur.
+Phase 0 - Socle technique (1,5 semaine) —
+ajoutée, indispensable
+Init Next.js 15 + TS strict + Tailwind + shadcn/ui
+Supabase local (Docker) + premières migrations
+PWA fonctionnelle de bout en bout
+: manifest, service worker, page offline, installation testée sur Android + iOS + Windows
+Auth + rôles + audit log
+CI/CD + environnements + Sentry
+Design system extrait de la maquette Obasa
+Tests de sortie obligatoires de la phase 0
+T0.1 Installation :
+installer Obasa sur Android Chrome, Windows Edge/Chrome, macOS Safari/Chrome et Linux Chromium ; vérifier l'icône, le nom, le mode standalone et la désinstallation.
+T0.2 iOS :
+ouvrir Obasa dans Safari, afficher le guide « Partager → Sur l'écran d'accueil », installer puis relancer l'application depuis l'icône.
+T0.3 Offline shell :
+charger chaque route critique, couper le réseau, fermer et rouvrir l'app ; l'écran offline doit s'afficher sans erreur.
+T0.4 Authentification :
+tester connexion, déconnexion, expiration de session, verrouillage PIN après cinq erreurs et révocation d'un poste.
+T0.5 RBAC :
+exécuter une matrice automatisée pour chaque rôle ; aucune permission interdite ne doit être accessible par l'interface ou l'API.
+T0.6 Audit :
+créer, modifier et annuler une action sensible ; vérifier l'utilisateur, le site, le poste, l'heure, l'état avant/après et l'impossibilité de supprimer le journal.
+T0.7 Mise à jour sûre :
+ouvrir un panier, publier une nouvelle version, vérifier qu'Obasa ne recharge pas la page pendant l'encaissement et propose la mise à jour ensuite.
+T0.8 Performance :
+mesurer sur un téléphone Android d'entrée de gamme ; LCP < 2 s online, démarrage offline < 1 s, Lighthouse PWA = 100.
+Critère de sortie :
+100 % des tests passent sur les appareils cibles, aucune anomalie critique ou haute ouverte, et un rapport de test est archivé.
+Livrable : une app installable qui affiche "Hello SECS" hors ligne sur les 5 OS. C'est le jalon qui dérisque tout le projet.
+Phase 1 - Produits, référencement, photos, import Excel (2,5 semaines)
+Catégories arborescentes + génération de références
+CRUD produits + variantes + attributs
+Pipeline images (compression, upload, 3 variantes, cache offline)
+Import Excel avec dry-run et rapport d'erreurs
+Seed des catégories quincaillerie/BTP (fer, ciment, peinture, plomberie, électricité, quincaillerie fine, outillage...)
+Sync descendante du référentiel vers IndexedDB
+Tests de sortie obligatoires de la phase 1
+T1.1 Hiérarchie :
+créer, modifier, désactiver et rechercher une famille, une sous-catégorie et une variante ; vérifier le chemin complet dans les tableaux et filtres.
+T1.2 Références :
+créer 100 produits sur deux catégories et deux sites ; vérifier unicité, préfixe, séquence et absence de collision entre postes.
+T1.3 CRUD :
+tester création, modification, désactivation et restauration logique d'un produit ; aucune suppression physique ne doit casser une vente existante.
+T1.4 Import valide :
+importer 1 000 références avec photos et vérifier le nombre de lignes, les catégories, les prix entiers XOF et les images associées.
+T1.5 Import invalide :
+tester doublons, prix négatifs, catégories absentes, unités interdites, lignes vides, fichier trop volumineux et caractères accentués ; le dry-run doit bloquer l'écriture et produire un rapport exploitable.
+T1.6 Photos :
+téléverser une photo lourde, vérifier compression WebP, vignette, image carte, image complète, placeholder et cache offline.
+T1.7 Recherche :
+rechercher par nom, référence, catégorie, accent, faute légère, synonyme et code-barres ; obtenir un résultat en moins de 100 ms offline.
+T1.8 Multi-site :
+vérifier qu'un gérant voit les sites autorisés et qu'un utilisateur ne peut jamais lire ou modifier le catalogue d'un site non autorisé.
+T1.9 Sync delta :
+modifier un produit côté serveur, couper le réseau, reconnecter puis vérifier une seule mise à jour locale sans doublon.
+Critère de sortie :
+import de 1 000 références réussi, recherche offline validée, données isolées par site et aucun écart entre le rapport d'import et la base.
+Phase 2 - Caisse, panier, encaissement, facturation (3 semaines) —
+la phase critique
+Recherche instantanée offline (MiniSearch + photos)
+Panier persistant + multi-panier en attente
+Encaissement, calcul de monnaie, modes de paiement
+Outbox + synchronisation + idempotence
+(le vrai travail est ici)
+Génération PDF facture offline
+Impression ESC/POS Bluetooth/USB + fallback
+Sessions de caisse + rapport Z
+⚠️ Arbitrage e-MECeF : à trancher au début de cette phase
+Tests de sortie obligatoires de la phase 2
+T2.1 Parcours nominal :
+rechercher un produit, afficher sa photo, l'ajouter, modifier la quantité, valider, encaisser, calculer la monnaie, générer la facture et enregistrer les statistiques.
+T2.2 Vente sans stock :
+vendre un produit avec stock
+NULL
+, zéro et négatif ; la vente doit être autorisée avec avertissement non bloquant.
+T2.3 Panier résilient :
+couper le courant ou fermer l'app à chaque étape du panier ; au redémarrage, le panier doit être récupéré sans corruption.
+T2.4 Argent :
+tester totaux, remises autorisées, montant insuffisant, montant exact, monnaie, grands montants et arrondi ; aucune erreur de virgule flottante.
+T2.5 Rôles :
+vérifier qu'un caissier ne peut pas modifier un prix, accorder une remise non autorisée, annuler ou consulter le prix d'achat.
+T2.6 Multi-postes :
+faire vendre simultanément deux postes offline dans le même site ; vérifier deux ventes, deux numéros locaux distincts et deux mouvements de stock.
+T2.7 Idempotence :
+couper le réseau après réception serveur mais avant réponse client ; relancer la synchronisation et vérifier une seule vente en base.
+T2.8 Réseau instable :
+tester perte réseau pendant recherche, validation, paiement, PDF et sync ; aucune action ne doit être perdue ni doublée.
+T2.9 Facture :
+vérifier snapshot du nom, référence, prix, TVA, total en lettres, caissier, site, poste, QR code et mention de normalisation.
+T2.10 e-MECeF nominal :
+envoyer une facture online, recevoir code et QR officiel, sauvegarder la réponse et télécharger/réimprimer la facture normalisée.
+T2.11 e-MECeF offline :
+créer une facture offline, afficher « en attente de normalisation e-MECeF », reconnecter, normaliser puis remplacer le statut sans changer les données commerciales.
+T2.12 e-MECeF erreurs :
+tester timeout, erreur 4xx, erreur 5xx, token expiré et réponse invalide ; vérifier retry, file d'erreurs, alerte gérant et absence de doublon fiscal.
+T2.13 Impression :
+tester ticket 58 mm, 80 mm, A4, imprimante Bluetooth Android/Windows, imprimante USB et fallback PDF/AirPrint.
+T2.14 Clôture :
+ouvrir une session, vendre avec plusieurs utilisateurs, compter la caisse, fermer et produire le rapport Z avec écart et audit.
+Critère de sortie :
+30 ventes consécutives dont au moins 10 offline, zéro doublon, 100 % des factures conformes au scénario e-MECeF validé, impression testée sur le matériel retenu et rapport Z exact.
+Phase 3 - Stocks, entrées, sorties, alertes (2 semaines)
+Mouvements de stock + PMP + trigger de cache
+Réceptions fournisseurs
+Déduction automatique après vente (sans jamais bloquer)
+Inventaires + écarts
+Alertes rupture et stock faible + notifications push + Badging API
+Tests de sortie obligatoires de la phase 3
+T3.1 Entrées :
+enregistrer une réception fournisseur, vérifier quantité, coût, document, utilisateur, site et recalcul du PMP.
+T3.2 Sorties :
+vérifier la sortie automatique liée à chaque vente, y compris une vente offline synchronisée plus tard.
+T3.3 Concurrence :
+vendre le même produit sur plusieurs postes simultanément ; le stock final doit être la somme exacte des mouvements.
+T3.4 Inventaire :
+compter, saisir un écart, valider un ajustement et vérifier l'historique avant/après.
+T3.5 Alertes :
+tester stock nul, stock inférieur au seuil, stock non suivi et retour au-dessus du seuil ; vérifier notification et badge.
+T3.6 Intégrité :
+tenter de modifier ou supprimer directement un mouvement validé ; l'opération doit être refusée, un mouvement correctif doit être utilisé.
+T3.7 Sites :
+vérifier transferts et stocks séparés entre points de vente ; aucune agrégation implicite ne doit mélanger les sites.
+Critère de sortie :
+rapprochement manuel réussi sur un échantillon de 100 produits et écart stock théorique/calculé égal à zéro.
+Phase 4 - Tableau de bord, KPI, marges, rapports (2 semaines)
+Vues matérialisées +
+pg_cron
+Dashboard avec drill-down sur l'arborescence produits
+Graphiques Recharts + sélecteur de période
+Rapports PDF/Excel journaliers, mensuels, annuels
+Export des ventes et statistiques
+Tests de sortie obligatoires de la phase 4
+T4.1 CA :
+comparer CA jour, semaine, mois et année avec un calcul manuel sur un jeu de données connu.
+T4.2 Filtres :
+vérifier périodes, site, catégorie, produit, caissier et mode de paiement, y compris fuseau
+Africa/Porto-Novo
+.
+T4.3 Marges :
+contrôler marge par ligne, produit, catégorie et site avec PMP connu ; vérifier prix d'achat masqué au caissier.
+T4.4 Top produits :
+comparer top quantités, top CA, top marge et produits dormants avec une requête de référence.
+T4.5 Rapports :
+générer journalier, rapport Z, mensuel, annuel, stock et export Excel ; vérifier format, totaux, accents et pagination.
+T4.6 Offline dashboard :
+couper le réseau et vérifier l'affichage du dernier snapshot avec date de fraîcheur clairement indiquée.
+T4.7 Performance :
+charger 100 000 ventes et 5 000 produits ; vérifier temps cible et absence de blocage grâce aux vues matérialisées.
+T4.8 Autorisations :
+vérifier qu'un caissier ne voit pas les rapports financiers et qu'un gérant ne voit que les sites autorisés.
+Critère de sortie :
+chaque KPI est réconcilié avec une source SQL de référence, exports validés par le client et aucune donnée sensible exposée au mauvais rôle.
+Phase 5 - IA et aide à la décision (2 semaines)
+Détection d'anomalies (SQL/statistiques)
+Résumé hebdomadaire automatique (LLM)
+Recommandations et prévisions de réapprovisionnement
+Gestion par objectifs
+Assistant conversationnel métier (optionnel, RAG + pgvector)
+Tests de sortie obligatoires de la phase 5
+T5.1 Données :
+vérifier que les analyses utilisent uniquement des ventes validées et des données anonymisées ou autorisées.
+T5.2 Résumé :
+générer un résumé hebdomadaire sur un jeu connu ; contrôler CA, évolution, top produits et anomalies citées.
+T5.3 Anomalies :
+injecter une remise anormale, une marge négative, un écart de caisse et une vente hors horaire ; vérifier détection et explication.
+T5.4 Recommandations :
+vérifier qu'une recommandation est traçable à ses données sources et qu'elle n'exécute aucune action automatiquement.
+T5.5 Objectifs :
+créer un objectif, enregistrer des ventes, vérifier progression, projection et alerte de dérive.
+T5.6 Résilience IA :
+couper l'API LLM, provoquer un timeout et envoyer une réponse invalide ; Obasa doit rester fonctionnel et afficher une erreur propre.
+T5.7 Coût et confidentialité :
+vérifier taille des prompts, absence de secrets ou données personnelles inutiles, journal des appels et plafond de dépenses.
+Critère de sortie :
+aucune fonctionnalité IA ne peut bloquer la caisse, toutes les recommandations sont explicables et le client valide les résultats sur ses propres données.
+Phases transverses
+Recette + corrections : 2 semaines
+Formation + mise en production + accompagnement : 1 semaine
+Durée totale indicative : 16 semaines
+(dont 1,5 de socle et 4 de tests/formation). Compresser la phase 2 est la pire décision possible sur ce projet.
+22.6 Protocole de validation continue, à appliquer par toute l'équipe
+À la fin de
+chaque ticket
+, le développeur doit exécuter : formatage, lint, TypeScript strict, tests unitaires ciblés, tests d'intégration concernés, puis le parcours E2E impacté. À la fin de
+chaque phase
+, il doit exécuter toute la suite, les tests offline, les tests multi-sites et les tests de sécurité.
+La règle de livraison est stricte :
+pas de merge si un test échoue, pas de déploiement si le rapport de phase n'est pas signé, pas de fonctionnalité déclarée terminée sans preuve reproductible
+. Chaque test doit préciser préconditions, données de départ, étapes, résultat attendu, résultat obtenu, navigateur/appareil, date, version et capture ou log utile.
+La pipeline CI doit bloquer automatiquement sur : erreur TypeScript, lint, test unitaire, test d'intégration, E2E critique, migration SQL non reproductible, régression Lighthouse, vulnérabilité critique, échec de build ou couverture sous le seuil convenu. Les parcours critiques doivent viser au minimum
+90 % de couverture sur la logique métier
+et 100 % des règles d'argent, de synchronisation, de numérotation, de permissions et de fiscalité.
+Jeu de données de référence obligatoire
+Créer un seed reproductible comprenant : 2 sites, 4 postes, 6 utilisateurs couvrant tous les rôles, 100 produits hiérarchisés, 20 produits avec photos, 30 ventes online, 30 ventes offline, 10 entrées de stock, 5 inventaires, 3 erreurs e-MECeF et des cas de remises. Tous les tests doivent pouvoir repartir de ce seed sans dépendre de données manuelles.
+Go / no-go avant production
+Le responsable de recette ne valide la production que si : les tests de sortie de toutes les phases passent, le scénario e-MECeF est accepté, les sauvegardes et restaurations ont été testées, les comptes et clés de production sont transférés au client, le matériel d'impression est validé, la formation est faite et aucun bug critique ou haute ne reste ouvert.
+23. COÛTS RÉCURRENTS ESTIMÉS
+Poste
+Démarrage
+Production sérieuse
+Notes
+Hébergement front (Vercel)
+0 FCFA
+12 500 FCFA/mois
+Pro à 20 $
+Base + Auth + Storage (Supabase)
+0 FCFA
+15 500 FCFA/mois
+Pro à 25 $, inclut PITR 7 j
+Nom de domaine
+.bj
+25 000 FCFA/an
+25 000 FCFA/an
+Au nom du client
+Suivi d'erreurs (Sentry)
+0 FCFA
+16 000 FCFA/mois
+Tier gratuit souvent suffisant
+E-mails transactionnels
+0 FCFA
+0-12 000 FCFA/mois
+Resend : 3000 e-mails/mois gratuits
+API LLM (phase 5)
+0 FCFA
+3 000-9 000 FCFA/mois
+GPT-4o-mini / Claude Haiku
+Total mensuel
+0 FCFA
+≈ 45 000 - 65 000 FCFA
+Alternative VPS
+3 500 FCFA/mois
+8 000 FCFA/mois
++ ton temps d'administration
+Matériel à prévoir côté client (à chiffrer séparément) :
+Équipement
+Modèle type
+Prix indicatif
+Poste de caisse
+Tablette Android 10" ou PC portable Windows
+100 000 - 250 000 FCFA
+Imprimante thermique 80 mm Bluetooth
+Xprinter XP-80, Epson TM-T20
+45 000 - 120 000 FCFA
+Scanner code-barres (optionnel)
+Caméra du téléphone suffit au départ
+0 - 35 000 FCFA
+Onduleur / batterie
+Indispensable au Bénin
+50 000 - 150 000 FCFA
+Tiroir-caisse (optionnel)
+Piloté par l'imprimante
+35 000 - 80 000 FCFA
+24. RISQUES & DÉCISIONS À TRANCHER
+24.1 Risques techniques
+Risque
+Gravité
+Mitigation
+Doublons de ventes après sync
+🔴 Critique
+UUID client +
+ON CONFLICT DO NOTHING
++ tests offline exhaustifs
+Purge du stockage iOS (7 jours)
+🟠 Élevé
+Forcer l'installation PWA +
+storage.persist()
++ sync fréquente
+Web Bluetooth absent sur iOS
+🟠 Élevé
+Poste de caisse principal sous Android/Windows. Documenté dans les prérequis
+Conformité e-MECeF non anticipée
+🔴 Critique
+Trancher en phase 1, pas en phase 4
+Coupures de courant en pleine vente
+🟠 Élevé
+Panier persisté à chaque modification + onduleur recommandé
+Import Excel de mauvaise qualité
+🟡 Moyen
+Dry-run obligatoire + modèle fourni + accompagnement à la saisie
+Adoption terrain (caissiers peu à l'aise)
+🟠 Élevé
+UI ultra-simple, gros boutons, formation 2 sessions, mode entraînement
+Quota de stockage dépassé (images)
+🟡 Moyen
+Purge LRU +
+storage.estimate()
+au démarrage
+Dérive du périmètre vers un ERP complet
+🟠 Élevé
+Périmètre v1 verrouillé par écrit, tout ajout = avenant
+25. ANNEXES
+25.1 Dépendances de démarrage
+{
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.47.0",
+    "@supabase/ssr": "^0.5.2",
+    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query-persist-client": "^5.62.0",
+    "@tanstack/react-table": "^8.20.0",
+    "@tanstack/react-virtual": "^3.11.0",
+    "dexie": "^4.0.10",
+    "dexie-react-hooks": "^1.1.7",
+    "zustand": "^5.0.2",
+    "zod": "^3.24.0",
+    "react-hook-form": "^7.54.0",
+    "@hookform/resolvers": "^3.9.1",
+    "minisearch": "^7.1.1",
+    "pdf-lib": "^1.17.1",
+    "xlsx": "^0.20.3",
+    "recharts": "^2.14.1",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "browser-image-compression": "^2.0.2",
+    "@zxing/browser": "^0.1.5",
+    "comlink": "^4.4.2",
+    "uuid": "^11.0.3",
+    "lucide-react": "^0.468.0",
+    "sonner": "^1.7.1",
+    "next-themes": "^0.4.4",
+    "tailwind-merge": "^2.5.5",
+    "class-variance-authority": "^0.7.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@serwist/next": "^9.0.9",
+    "serwist": "^9.0.9",
+    "tailwindcss": "^4.0.0",
+    "vitest": "^2.1.8",
+    "@playwright/test": "^1.49.0",
+    "@testing-library/react": "^16.1.0",
+    "eslint": "^9.16.0",
+    "prettier": "^3.4.2",
+    "@next/bundle-analyzer": "^15.1.0",
+    "supabase": "^2.0.0",
+    "pwa-asset-generator": "^6.4.0"
+  }
+}
+25.2 Variables d'environnement
+# Public (exposé au navigateur)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_SENTRY_DSN=
+
+# Serveur uniquement
+SUPABASE_SERVICE_ROLE_KEY=
+DATABASE_URL=
+RESEND_API_KEY=
+OPENAI_API_KEY=            # phase 5
+MECEF_API_URL=             # si assujetti
+MECEF_API_TOKEN=
+MECEF_IFU=
+CRON_SECRET=
+25.3 Commandes utiles
+pnpm dev                              # développement local
+supabase start                        # stack Supabase locale (Docker)
+supabase db diff -f nom_migration     # générer une migration depuis les changements
+supabase db push                      # appliquer les migrations
+supabase gen types typescript --local > lib/database.types.ts
+pnpm build && pnpm start              # test du build de production
+pnpm dlx pwa-asset-generator logo.svg public/icons --manifest app/manifest.ts
+pnpm dlx @lhci/cli autorun            # audit Lighthouse
+pnpm test:e2e --project=chromium      # E2E
+25.4 Livrables techniques attendus en fin de projet
+Code source complet (front + back + migrations SQL), dépôt Git privé transféré au client
+Schéma de base de données documenté + diagramme ERD
+Documentation d'architecture (
+docs/architecture.md
+)
+Documentation API (OpenAPI ou docs Supabase générées)
+Runbook d'exploitation : déploiement, sauvegarde, restauration, incidents courants
+Guide utilisateur illustré (caissier, magasinier, gérant)
+Guide d'installation de la PWA par OS (le document que le client remettra à ses employés)
+Modèle Excel d'import + nomenclature des catégories
+Rapport de tests + rapport Lighthouse
+Tous les accès (hébergement, base, domaine, dépôt) au nom du client
+2 sessions de formation + 1 mois d'accompagnement rapproché
+26. LES 10 RÈGLES À NE JAMAIS VIOLER
+La caisse n'attend jamais le réseau.
+Écriture locale d'abord, toujours.
+Les montants sont des entiers.
+Aucun float sur le FCFA.
+Le stock est une somme de mouvements
+, jamais une colonne qu'on écrase.
+Les lignes de vente stockent un snapshot
+du nom et du prix.
+L'ID de vente est généré par le client.
+C'est la clé de l'idempotence.
+Aucun appel direct au back-end depuis un composant.
+Tout passe par
+lib/repositories
+.
+Pas de
+skipWaiting
+: on ne met jamais à jour l'app pendant un encaissement.
+L'audit log est alimenté par des triggers
+, jamais par le code applicatif.
+Tester sur un Android d'entrée de gamme
+, pas sur ta machine de dev.
+Une vente ne se supprime pas.
+On fait un avoir. Toujours.
+Document technique SECS v1.0 - 29/07/2026 - à mettre à jour après extraction des tokens de design de la maquette Obasa et arbitrage sur la conformité e-MECeF.

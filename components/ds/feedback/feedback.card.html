@@ -1,0 +1,35 @@
+<!-- @dsCard group="Composants" viewport="700x340" name="Retours — Badge, StatusBadge, Toast, Tooltip, Progress" subtitle="Vocabulaire de statut fixe" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:16px;background:var(--surface-card);font-family:var(--font-sans);}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { Badge, StatusBadge, Toast, Tooltip, IconButton, Progress } = window.OBASASECSDesignSystem_66e938;
+function Demo() {
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:14}}>
+      <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+        <StatusBadge status="en stock" />
+        <StatusBadge status="faible" />
+        <StatusBadge status="rupture" />
+        <StatusBadge status="non renseigné" />
+      </div>
+      <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+        <Badge tone="primary">Nouveau</Badge>
+        <Badge tone="neutral">12 articles</Badge>
+        <Badge tone="warning">à venir</Badge>
+      </div>
+      <Progress value={72} label="Import Excel — 214 lignes" />
+      <Toast tone="success">Vente validée — 12 500 FCFA encaissés</Toast>
+      <div style={{display:'flex', gap:20, paddingTop: 4}}>
+        <Tooltip label="Créé par A. Dossou · il y a 2h"><IconButton name="info" label="Info" /></Tooltip>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>

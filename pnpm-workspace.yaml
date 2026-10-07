@@ -1,0 +1,13 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+overrides:
+  '@napi-rs/wasm-runtime>@emnapi/core': 2.0.0-alpha.3
+  '@napi-rs/wasm-runtime>@emnapi/runtime': 2.0.0-alpha.3
+  '@unrs/resolver-binding-wasm32-wasi>@emnapi/core': 2.0.0-alpha.3
+  '@unrs/resolver-binding-wasm32-wasi>@emnapi/runtime': 2.0.0-alpha.3
+  nanoid@3: 3.3.18
+  postcss: 8.5.26
+  sharp: 0.35.3

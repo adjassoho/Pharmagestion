@@ -1,0 +1,48 @@
+<!-- @dsCard group="Composants" viewport="700x620" name="Graphiques — TrendChart, RankingChart, CategoryDonut" subtitle="Recharts (CDN) — seulement 3 types de graphiques utilisés" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-is@18.3.1/umd/react-is.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://unpkg.com/recharts@2.15.0/umd/Recharts.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;padding:16px;background:var(--surface-card);font-family:var(--font-sans);}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { TrendChart, RankingChart, CategoryDonut } = window.OBASASECSDesignSystem_66e938;
+const trend = [
+  {label:'Lun', value:120000},{label:'Mar', value:98000},{label:'Mer', value:145000},
+  {label:'Jeu', value:132000},{label:'Ven', value:184500},{label:'Sam', value:210000},
+];
+const ranking = [
+  {label:'Fer à béton 8mm', value:184},{label:'Ciment CEM II', value:120},
+  {label:'Peinture blanc 5L', value:76},{label:'Fer à béton 10mm', value:54},
+];
+const categories = [
+  {label:'Fer & métaux', value:42},{label:'Ciment & liants', value:28},
+  {label:'Peinture', value:18},{label:'Outillage', value:12},
+];
+function Demo() {
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:20}}>
+      <div>
+        <div style={{fontSize:13, fontWeight:600, color:'var(--text-secondary)', marginBottom:6}}>Évolution du CA — TrendChart</div>
+        <TrendChart data={trend} dataKey="value" xKey="label" />
+      </div>
+      <div style={{display:'flex', gap:20}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13, fontWeight:600, color:'var(--text-secondary)', marginBottom:6}}>Classement produits — RankingChart</div>
+          <RankingChart horizontal data={ranking} dataKey="value" xKey="label" />
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13, fontWeight:600, color:'var(--text-secondary)', marginBottom:6}}>Répartition par catégorie — CategoryDonut</div>
+          <CategoryDonut data={categories} />
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>

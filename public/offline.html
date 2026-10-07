@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mode Hors-Ligne — PharmaGestion</title>
+  <meta name="theme-color" content="#0F172A">
+  <style>
+    :root {
+      --bg-dark: #090D16;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --color-primary: #2563EB;
+      --color-accent: #F59E0B;
+      --color-success: #10B981;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 60%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── SVG Illustration ── */
+    .illustration-wrapper {
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 12px;
+    }
+
+    .illustration-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes pulseWave {
+      0% { r: 8; opacity: 0.9; }
+      100% { r: 40; opacity: 0; }
+    }
+
+    .anim-float {
+      animation: floatSlow 4s ease-in-out infinite;
+    }
+
+    .anim-float-delayed {
+      animation: floatSlow 4.5s ease-in-out infinite 1s;
+    }
+
+    .anim-wave-1 {
+      animation: pulseWave 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+      transform-origin: 200px 85px;
+    }
+
+    .anim-wave-2 {
+      animation: pulseWave 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite 1.4s;
+      transform-origin: 200px 85px;
+    }
+
+    /* ── Badge Statut ── */
+    .network-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #FBBF24;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .network-badge.is-online {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34D399;
+    }
+
+    .network-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #F59E0B;
+    }
+
+    .network-badge.is-online .network-dot {
+      background: #10B981;
+    }
+
+    /* ── Textes Épurés ── */
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+
+    p.subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 24px;
+      max-width: 360px;
+    }
+
+    /* ── Boutons d'Action ── */
+    .actions-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 20px;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: #2563EB;
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+
+    .btn-secondary {
+      background: #1E293B;
+      color: #E2E8F0;
+    }
+
+    .btn-secondary:hover {
+      background: #334155;
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- ── Illustration SVG Vectorielle Animée PharmaGestion ── -->
+    <div class="illustration-wrapper">
+      <svg class="illustration-svg" viewBox="0 0 400 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="storeGrad" x1="100" y1="120" x2="300" y2="260" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+          </linearGradient>
+          <linearGradient id="roofGrad" x1="120" y1="90" x2="280" y2="130" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2563EB"/>
+            <stop offset="100%" stop-color="#1D4ED8"/>
+          </linearGradient>
+          <linearGradient id="cementGrad" x1="60" y1="190" x2="110" y2="240" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#94A3B8"/>
+            <stop offset="100%" stop-color="#475569"/>
+          </linearGradient>
+          <linearGradient id="steelGrad" x1="290" y1="160" x2="340" y2="250" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F59E0B"/>
+            <stop offset="100%" stop-color="#B45309"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Sol et Ombre -->
+        <ellipse cx="200" cy="245" rx="170" ry="24" fill="#0B132B" opacity="0.8"/>
+        <ellipse cx="200" cy="245" rx="140" ry="18" fill="#1E293B" opacity="0.4"/>
+
+        <!-- Ondes Radio Antenne (Animées) -->
+        <circle class="anim-wave-1" cx="200" cy="85" r="14" stroke="#38BDF8" fill="none" opacity="0.6" stroke-width="2"/>
+        <circle class="anim-wave-2" cx="200" cy="85" r="22" stroke="#F59E0B" fill="none" opacity="0.5" stroke-width="2"/>
+
+        <!-- Bâtiment Pharmacie PharmaPlus -->
+        <g class="anim-float">
+          <!-- Murs -->
+          <path d="M120 125 L280 125 L280 240 L120 240 Z" fill="url(#storeGrad)" stroke="#334155" stroke-width="2"/>
+          <!-- Toit -->
+          <path d="M105 125 L200 85 L295 125 Z" fill="url(#roofGrad)" stroke="#60A5FA" stroke-width="2"/>
+          
+          <!-- Enseigne -->
+          <rect x="145" y="105" width="110" height="24" rx="4" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+          <rect x="145" y="110" width="14" height="14" rx="3" fill="#10B981"/><path d="M150 112 H154 V116 H158 V120 H154 V124 H150 V120 H146 V116 H150 Z" fill="#FFFFFF"/><text x="212" y="122" fill="#F8FAFC" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="1.5">PHARMAPLUS</text>
+
+          <!-- Vitrine Caisse e-MECeF -->
+          <rect x="135" y="145" width="60" height="50" rx="4" fill="#090D16" stroke="#38BDF8" stroke-width="1.5"/>
+          <rect x="140" y="150" width="50" height="30" rx="2" fill="#1E3A8A"/>
+          <line x1="145" y1="158" x2="175" y2="158" stroke="#38BDF8" stroke-width="2"/>
+          <line x1="145" y1="164" x2="168" y2="164" stroke="#93C5FD" stroke-width="1.5"/>
+          <line x1="145" y1="170" x2="182" y2="170" stroke="#10B981" stroke-width="1.5"/>
+          <circle cx="180" cy="158" r="3" fill="#10B981"/>
+
+          <!-- Porte Entrepôt -->
+          <rect x="210" y="145" width="55" height="95" rx="3" fill="#0F172A" stroke="#475569" stroke-width="1.5"/>
+          <line x1="210" y1="165" x2="265" y2="165" stroke="#334155" stroke-width="1.5"/>
+          <line x1="210" y1="185" x2="265" y2="185" stroke="#334155" stroke-width="1.5"/>
+          <line x1="210" y1="205" x2="265" y2="205" stroke="#334155" stroke-width="1.5"/>
+          <circle cx="218" cy="195" r="3" fill="#F59E0B"/>
+
+          <!-- Antenne -->
+          <line x1="200" y1="85" x2="200" y2="60" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="200" cy="58" r="5" fill="#F59E0B"/>
+        </g>
+
+        <!-- Flacon & Boîte de médicaments -->
+        <g class="anim-float-delayed">
+          <rect x="58" y="199" width="30" height="40" rx="5" transform="rotate(-6 58 199)" fill="url(#cementGrad)" stroke="#A7F3D0" stroke-width="1.2"/>
+          <rect x="56" y="193" width="34" height="7" rx="2" transform="rotate(-6 58 199)" fill="#E2E8F0"/>
+          <rect x="78" y="206" width="42" height="38" rx="4" transform="rotate(4 78 206)" fill="#1E3A8A" stroke="#60A5FA" stroke-width="1.2"/>
+          <rect x="86" y="216" width="26" height="4" rx="2" transform="rotate(4 78 206)" fill="#93C5FD"/>
+          <rect x="86" y="224" width="20" height="4" rx="2" transform="rotate(4 78 206)" fill="#60A5FA"/>
+          <path d="M104 214 H109 V219 H114 V224 H109 V229 H104 V224 H99 V219 H104 Z" transform="rotate(4 78 206)" fill="#FFFFFF" opacity="0.9"/>
+          <rect x="95" y="192" width="26" height="28" rx="3" fill="#0284C7" stroke="#38BDF8" stroke-width="1.2"/>
+          <rect x="93" y="189" width="30" height="4" rx="1.5" fill="#E2E8F0"/>
+        </g>
+
+        <!-- Gélules & Mortier Pharmacien -->
+        <g class="anim-float">
+          <line x1="292" y1="238" x2="318" y2="182" stroke="url(#steelGrad)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M312 186 Q314 178 322 180 L332 183 Q338 185 336 191 Q334 197 327 195 L317 192 Z" fill="url(#steelGrad)"/>
+          <path d="M288 214 Q296 208 304 214 Q296 220 288 214 Z" fill="#F59E0B" stroke="#FBBF24" stroke-width="1"/>
+          <path d="M304 214 Q312 208 320 214 Q312 220 304 214 Z" fill="#38BDF8" stroke="#7DD3FC" stroke-width="1"/>
+          <path d="M296 228 Q304 222 312 228 Q304 234 296 228 Z" fill="#38BDF8" stroke="#7DD3FC" stroke-width="1"/>
+        </g>
+
+        <!-- Badge Mode Local -->
+        <g transform="translate(110, 240)">
+          <rect x="0" y="0" width="180" height="26" rx="13" fill="#064E3B" stroke="#10B981" stroke-width="1.5"/>
+          <circle cx="16" cy="13" r="5" fill="#34D399"/>
+          <circle cx="16" cy="13" r="2" fill="#FFFFFF"/>
+          <text x="30" y="17" fill="#ECFDF5" font-size="9" font-weight="700" letter-spacing="0.5">MODE LOCAL ACTIF</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ── Badge d'État Réseau ── -->
+    <div id="networkBadge" class="network-badge">
+      <span class="network-dot"></span>
+      <span id="networkText">Hors-ligne</span>
+    </div>
+
+    <!-- ── Titre & Message Minimaliste ── -->
+    <h1>Vous êtes hors-ligne</h1>
+    <p class="subtitle">Vos données et votre caisse restent accessibles en toute sécurité.</p>
+
+    <!-- ── Boutons d'Action ── -->
+    <div class="actions-group">
+      <button id="btnRetry" class="btn btn-primary" onclick="handleRetry()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19"/>
+        </svg>
+        <span>Réessayer</span>
+      </button>
+
+      <a href="/caisse" class="btn btn-secondary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>
+          <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+        </svg>
+        <span>Ouvrir la Caisse</span>
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    function updateNetworkStatus() {
+      const badge = document.getElementById('networkBadge');
+      const text = document.getElementById('networkText');
+
+      if (navigator.onLine) {
+        badge.classList.add('is-online');
+        text.innerText = 'Connexion rétablie !';
+        setTimeout(() => {
+          window.location.reload();
+        }, 600);
+      } else {
+        badge.classList.remove('is-online');
+        text.innerText = 'Hors-ligne';
+      }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    updateNetworkStatus();
+
+    function handleRetry() {
+      const btn = document.getElementById('btnRetry');
+      btn.innerHTML = '<span>Vérification…</span>';
+      setTimeout(() => {
+        if (navigator.onLine) {
+          window.location.reload();
+        } else {
+          btn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-1.19"/>
+            </svg>
+            <span>Réessayer</span>
+          `;
+        }
+      }, 500);
+    }
+  </script>
+</body>
+</html>

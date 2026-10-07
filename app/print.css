@@ -1,0 +1,128 @@
+/* ══════════════════════════════════════════════
+   OBASA — Styles d'impression / Export PDF
+   Ce fichier est importé directement dans le layout pour
+   garantir que les règles ne soient pas purgées par Tailwind.
+   ══════════════════════════════════════════════ */
+
+@media print {
+  /* ── 1. Masquer la navigation ── */
+  .ds-shell-sidebar,
+  .ds-shell-menu-btn,
+  .ds-shell-menu-overlay,
+  .ds-shell-menu-drawer,
+  .ds-shell-topbar,
+  .ds-shell-sidebar-inner,
+  .ds-shell-sidebar-brand,
+  .ds-shell-sidebar-nav,
+  .ds-shell-sidebar-user {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* ── 2. Débloquer les conteneurs ── */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ds-shell {
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  .ds-shell-main {
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  .ds-shell-content {
+    display: block !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+    padding: 0 !important;
+  }
+
+  /* ── 3. Pages spécifiques ── */
+  /* Facture */
+  .ds-invoice {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 20px !important;
+    container-type: normal !important;
+  }
+
+  .ds-invoice-inner {
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .ds-invoice-actions {
+    display: none !important;
+  }
+
+  /* Encaissement — masquer le pavé numérique, n'imprimer que le récap */
+  .ds-pay {
+    height: auto !important;
+    overflow: visible !important;
+    container-type: normal !important;
+  }
+
+  .ds-pay-inner {
+    overflow: visible !important;
+  }
+
+  .ds-pay-keypad,
+  .ds-pay-panel {
+    display: none !important;
+  }
+
+  /* POS — ne pas imprimer la caisse */
+  .ds-pos {
+    height: auto !important;
+    overflow: visible !important;
+    container-type: normal !important;
+  }
+
+  /* Dashboard, Catalogue, Stock, Rapports — débloquer le scroll */
+  .ds-dash,
+  .ds-dash-inner,
+  .ds-catalog,
+  .ds-catalog-inner,
+  .ds-stock,
+  .ds-stock-inner,
+  .ds-reports-container,
+  .ds-sales-history-container,
+  .ds-page {
+    height: auto !important;
+    overflow: visible !important;
+    container-type: normal !important;
+  }
+
+  /* ── 4. Cacher les éléments interactifs inutiles en impression ── */
+  .ds-shell-sync-badge,
+  .ds-shell-bell-wrap,
+  .ds-shell-avatar,
+  .ds-pos-cart-icon-btn {
+    display: none !important;
+  }
+
+  /* ── 5. Forcer la taille de police lisible ── */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
